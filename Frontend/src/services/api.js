@@ -14,8 +14,13 @@ export const resolveApiUrl = (value) => {
 
 // Add token to requests
 API.interceptors.request.use((config) => {
-    const auth = JSON.parse(localStorage.getItem('auth-storage'));
-    const token = auth?.state?.user?.token;
+    let token = null;
+    try {
+        const auth = JSON.parse(localStorage.getItem('auth-storage'));
+        token = auth?.state?.token || auth?.state?.user?.token || null;
+    } catch (e) {
+        token = null;
+    }
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -50,6 +55,7 @@ export const documentsAPI = {
 export const registrationAPI = {
     register: (data) => API.post('/registrations', data),
     getMy: () => API.get('/registrations/my'),
+    getAll: () => API.get('/registrations/all'),
     getAssigned: () => API.get('/registrations/assigned'),
     getEligibleMembers: (eventId) => API.get(`/registrations/eligible-members/${eventId}`),
     markAttendance: (id, status) => API.patch(`/registrations/${id}/attendance`, { status }),
@@ -66,6 +72,11 @@ export const volunteerAPI = {
 export const userAPI = {
     updateStatus: (id, status) => API.patch(`/users/${id}/status`, { status }),
     getById: (id) => API.get(`/users/${id}`),
+    getCollegeDetails: (slug) => API.get(`/users/college/${slug}`),
+};
+
+export const logsAPI = {
+    getRecent: () => API.get('/logs/recent'),
 };
 
 export default API;

@@ -12,16 +12,39 @@ const isInternalUser = (user) => {
 
 const isEventVisibleToUser = (event, user) => {
     if (!event) return false;
-    if (user?.role === 'admin') return true;
+    // Admins and incharges should see all events in the listing
+    if (user?.role === 'admin' || user?.role === 'incharge') return true;
 
     const audienceType = normalizeText(event.audienceType || 'external');
     const internalUser = isInternalUser(user);
 
     if (audienceType === 'both') return true;
     if (audienceType === 'internal') return internalUser;
-    if (audienceType === 'external') return true;
+    if (audienceType === 'external') return !internalUser;
 
     return true;
+};
+
+const applyAudienceScheduleForUser = (event, user) => {
+    // Return a shallow plain object copy with time/date overridden
+    const e = { ...event.get ? event.get() : event };
+    const internalUser = isInternalUser(user);
+
+    if (internalUser) {
+        if (e.internalTime || e.internalEndTime || e.internalDate) {
+            e.time = e.internalTime || e.time;
+            e.endTime = e.internalEndTime || e.endTime;
+            e.date = e.internalDate || e.date;
+        }
+    } else {
+        if (e.externalTime || e.externalEndTime || e.externalDate) {
+            e.time = e.externalTime || e.time;
+            e.endTime = e.externalEndTime || e.endTime;
+            e.date = e.externalDate || e.date;
+        }
+    }
+
+    return e;
 };
 
 const normalizeAssignedEventIds = (assignedEventIds) => {
@@ -176,7 +199,9 @@ const deleteStoredDocumentFile = async (documentValue) => {
 exports.getEvents = async (req, res) => {
     try {
         const events = await Event.findAll();
-        res.json(events.filter((event) => isEventVisibleToUser(event, req.user)));
+        const visible = events.filter((event) => isEventVisibleToUser(event, req.user));
+        const adjusted = visible.map((event) => applyAudienceScheduleForUser(event, req.user));
+        res.json(adjusted);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -188,18 +213,15 @@ exports.getAssignedEvents = async (req, res) => {
 
         if (req.user?.role === 'admin') {
             const events = await Event.findAll();
-            return res.json(events);
+            return res.json(events.map((e) => applyAudienceScheduleForUser(e, req.user)));
         }
 
         if (assignedEventIds.length === 0) {
             return res.json([]);
         }
 
-        const events = await Event.findAll({
-            where: { id: assignedEventIds }
-        });
-
-        res.json(events);
+        const events = await Event.findAll({ where: { id: assignedEventIds } });
+        res.json(events.map((e) => applyAudienceScheduleForUser(e, req.user)));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -209,7 +231,7 @@ exports.getEventBySlug = async (req, res) => {
     try {
         const event = await Event.findOne({ where: { slug: req.params.slug } });
         if (event && isEventVisibleToUser(event, req.user)) {
-            res.json(event);
+            res.json(applyAudienceScheduleForUser(event, req.user));
         } else {
             res.status(404).json({ message: 'Event not found' });
         }

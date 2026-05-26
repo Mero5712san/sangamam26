@@ -43,74 +43,73 @@ export function Topbar({ onBurgerClick, onProfileClick }) {
                         {/* Notifications Dropdown */}
                         {showNotifications && (
                             <>
-                                <div 
-                                    className="fixed inset-0 z-40 h-screen w-screen cursor-default" 
-                                    onClick={() => setShowNotifications(false)} 
+                                <div
+                                    className="fixed inset-0 z-40 h-screen w-screen cursor-default"
+                                    onClick={() => setShowNotifications(false)}
                                 />
                                 <div className="fixed inset-x-4 top-[76px] md:absolute md:right-0 md:left-auto md:top-full md:mt-3 md:w-80 rounded-xl border border-sangamam-border bg-[#1f0e09]/95 backdrop-blur-xl shadow-2xl z-50">
-                                <div className="p-4 border-b border-sangamam-border flex items-center justify-between">
-                                    <h3 className="font-bold text-sangamam-gold">Notifications</h3>
-                                    <span className="text-xs text-gray-400">{notifications.length} New</span>
-                                </div>
-                                <div className="max-h-[320px] overflow-y-auto">
-                                    {notifications.length > 0 ? (
-                                        <div className="divide-y divide-sangamam-border">
-                                            {notifications.map((notif) => (
-                                                <div key={notif.id} className="p-4 hover:bg-white/5 transition-colors">
-                                                    <div className="flex gap-3">
-                                                        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                                            notif.type === 'attendance' ? 'bg-emerald-500/20 text-emerald-400' : 
-                                                            notif.type === 'status_change' ? 'bg-blue-500/20 text-blue-400' : 
-                                                            'bg-sangamam-gold/20 text-sangamam-gold'
-                                                        }`}>
-                                                            {getIcon(notif.icon)}
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            {notif.type === 'team_invite' ? (
-                                                                <>
-                                                                    <p className="text-sm text-gray-200">
-                                                                        <span className="font-bold text-sangamam-gold">{notif.sender}</span> invited you to join <span className="font-bold text-white">{notif.team}</span> for <span className="italic">{notif.event}</span>
-                                                                    </p>
-                                                                    <div className="mt-3 flex gap-2">
-                                                                        <button
-                                                                            onClick={() => removeNotification(notif.id)}
-                                                                            className="flex-1 py-1.5 px-3 rounded-lg bg-sangamam-gold text-black text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-1"
-                                                                        >
-                                                                            <Check size={14} /> Accept
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => removeNotification(notif.id)}
-                                                                            className="py-1.5 px-3 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors"
-                                                                        >
-                                                                            <X size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <p className="text-sm font-bold text-white">{notif.title}</p>
-                                                                    <p className="text-xs text-gray-400 mt-0.5">{notif.message}</p>
-                                                                    <p className="text-[10px] text-gray-600 mt-2">{notif.time}</p>
-                                                                </>
-                                                            )}
+                                    <div className="p-4 border-b border-sangamam-border flex items-center justify-between">
+                                        <h3 className="font-bold text-sangamam-gold">Notifications</h3>
+                                        <span className="text-xs text-gray-400">{notifications.length} New</span>
+                                    </div>
+                                    <div className="max-h-[320px] overflow-y-auto">
+                                        {notifications.length > 0 ? (
+                                            <div className="divide-y divide-sangamam-border">
+                                                {notifications.map((notif) => (
+                                                    <div key={notif.id} className="p-4 hover:bg-white/5 transition-colors">
+                                                        <div className="flex gap-3">
+                                                            <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${notif.type === 'attendance' ? 'bg-emerald-500/20 text-emerald-400' :
+                                                                    notif.type === 'status_change' ? 'bg-blue-500/20 text-blue-400' :
+                                                                        'bg-sangamam-gold/20 text-sangamam-gold'
+                                                                }`}>
+                                                                {getIcon(notif.icon)}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                {notif.type === 'team_invite' ? (
+                                                                    <>
+                                                                        <p className="text-sm text-gray-200">
+                                                                            <span className="font-bold text-sangamam-gold">{notif.sender}</span> invited you to join <span className="font-bold text-white">{notif.team}</span> for <span className="italic">{notif.event}</span>
+                                                                        </p>
+                                                                        <div className="mt-3 flex gap-2">
+                                                                            <button
+                                                                                onClick={() => removeNotification(notif.id)}
+                                                                                className="flex-1 py-1.5 px-3 rounded-lg bg-sangamam-gold text-black text-xs font-bold hover:bg-white transition-colors flex items-center justify-center gap-1"
+                                                                            >
+                                                                                <Check size={14} /> Accept
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => removeNotification(notif.id)}
+                                                                                className="py-1.5 px-3 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors"
+                                                                            >
+                                                                                <X size={14} />
+                                                                            </button>
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <p className="text-sm font-bold text-white">{notif.title}</p>
+                                                                        <p className="text-xs text-gray-400 mt-0.5">{notif.message}</p>
+                                                                        <p className="text-[10px] text-gray-600 mt-2">{notif.time}</p>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="p-8 text-center">
-                                            <Bell size={32} className="mx-auto text-gray-600 mb-2 opacity-20" />
-                                            <p className="text-sm text-gray-500">No new notifications</p>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-8 text-center">
+                                                <Bell size={32} className="mx-auto text-gray-600 mb-2 opacity-20" />
+                                                <p className="text-sm text-gray-500">No new notifications</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {notifications.length > 0 && (
+                                        <div className="p-3 border-t border-sangamam-border text-center">
+                                            <button onClick={clearAll} className="text-xs text-sangamam-gold hover:underline">Clear all notifications</button>
                                         </div>
                                     )}
                                 </div>
-                                {notifications.length > 0 && (
-                                    <div className="p-3 border-t border-sangamam-border text-center">
-                                        <button onClick={clearAll} className="text-xs text-sangamam-gold hover:underline">Clear all notifications</button>
-                                    </div>
-                                )}
-                            </div>
                             </>
                         )}
                     </div>

@@ -12,9 +12,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const { getEvents, getAssignedEvents, getEventBySlug, createEvent, updateEvent, updateReport, updateEventDocument, deleteEventDocument } = require('../controllers/eventController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, authorize, attachUserIfPresent } = require('../middleware/authMiddleware');
 
-router.get('/', getEvents);
+router.get('/', attachUserIfPresent, getEvents);
 router.get('/assigned', protect, getAssignedEvents);
 router.get('/:slug', getEventBySlug);
 router.post('/', protect, authorize('admin'), createEvent);

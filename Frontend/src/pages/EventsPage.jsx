@@ -3,7 +3,7 @@ import { SearchSelect } from '../components/SearchSelect';
 import { EventDetailModal } from '../components/EventDetailModal';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Users, Plus } from 'lucide-react';
+import { Users, Plus, Clock } from 'lucide-react';
 import { useToastStore } from '../store/toastStore';
 import { eventAPI, registrationAPI } from '../services/api';
 
@@ -22,6 +22,12 @@ export function EventsPage({ embedded = false }) {
     const [registeringEvent, setRegisteringEvent] = useState(null);
     const [teamMemberOptions, setTeamMemberOptions] = useState([]);
     const [isTeamMembersLoading, setIsTeamMembersLoading] = useState(false);
+
+    const formatTimeRange = (event) => {
+        if (!event?.time && !event?.endTime) return 'Time to be announced';
+        if (event?.time && event?.endTime) return `${event.time}-${event.endTime}`;
+        return event?.time || event?.endTime;
+    };
 
     const getParticipationMode = (event) => event?.registrationType || event?.participationType || 'solo';
 
@@ -246,6 +252,10 @@ export function EventsPage({ embedded = false }) {
                                     )}
                                 </div>
                                 <p className="mb-4 text-sm text-gray-600">{event.tagline}</p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Clock size={14} className="text-sangamam-gold" />
+                                    <span>{formatTimeRange(event)}</span>
+                                </div>
                             </div>
                         </div>
                     ))}

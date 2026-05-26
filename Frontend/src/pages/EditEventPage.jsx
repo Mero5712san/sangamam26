@@ -22,6 +22,13 @@ export function EditEventPage() {
         description: '',
         date: '',
         time: '',
+        endTime: '',
+        internalDate: '',
+        internalTime: '',
+        internalEndTime: '',
+        externalDate: '',
+        externalTime: '',
+        externalEndTime: '',
         audienceType: 'external',
         registrationType: 'individual',
         participationType: 'solo',
@@ -109,11 +116,17 @@ export function EditEventPage() {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
+            const payload = { ...eventData };
+            // when audience is both, prefer internal/external fields; avoid sending general schedule
+            if (payload.audienceType === 'both') {
+                payload.date = payload.time = payload.endTime = '';
+            }
+
             const finalData = {
-                ...eventData,
-                registrationType: eventData.participationType,
-                coordinators: eventData.incharges,
-                slug: eventData.slug || eventData.name.toLowerCase().replace(/ /g, '-')
+                ...payload,
+                registrationType: payload.participationType,
+                coordinators: payload.incharges,
+                slug: payload.slug || payload.name.toLowerCase().replace(/ /g, '-')
             };
 
             if (isCreate) {
@@ -196,25 +209,39 @@ export function EditEventPage() {
                     {/* Schedule & Registration */}
                     <div>
                         <h3 className="text-xl font-bold text-white border-b border-sangamam-border pb-2 mb-4">Schedule & Registration</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label className="block text-sm text-gray-600 font-bold mb-2">Date</label>
-                                <input
-                                    type="date"
-                                    value={eventData.date}
-                                    onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
-                                    className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm text-gray-600 font-bold mb-2">Time</label>
-                                <input
-                                    type="time"
-                                    value={eventData.time}
-                                    onChange={(e) => setEventData({ ...eventData, time: e.target.value })}
-                                    className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
-                                />
-                            </div>
+                        <div className={`grid grid-cols-1 md:grid-cols-${eventData.audienceType === 'both' ? '2' : '4'} gap-6`}>
+                            {eventData.audienceType !== 'both' && (
+                                <>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 font-bold mb-2">Date</label>
+                                        <input
+                                            type="date"
+                                            value={eventData.date}
+                                            onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                                            className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 font-bold mb-2">Time</label>
+                                        <input
+                                            type="time"
+                                            value={eventData.time}
+                                            onChange={(e) => setEventData({ ...eventData, time: e.target.value })}
+                                            className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 font-bold mb-2">End Time</label>
+                                        <input
+                                            type="time"
+                                            value={eventData.endTime}
+                                            onChange={(e) => setEventData({ ...eventData, endTime: e.target.value })}
+                                            className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
                             <div>
                                 <label className="block text-sm text-gray-600 font-bold mb-2">Audience</label>
                                 <select
@@ -227,6 +254,7 @@ export function EditEventPage() {
                                     <option value="both">Both</option>
                                 </select>
                             </div>
+
                             <div>
                                 <label className="block text-sm text-gray-600 font-bold mb-2">Participation Mode</label>
                                 <select
@@ -240,6 +268,29 @@ export function EditEventPage() {
                                 </select>
                             </div>
                         </div>
+
+                        {eventData.audienceType === 'both' && (
+                            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-4 border rounded bg-gray-50">
+                                    <h4 className="font-bold mb-2">Internal Schedule</h4>
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">Date</label>
+                                    <input type="date" value={eventData.internalDate} onChange={(e) => setEventData({ ...eventData, internalDate: e.target.value })} className="w-full px-3 py-2 mb-2 bg-white border rounded" />
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">Start Time</label>
+                                    <input type="time" value={eventData.internalTime} onChange={(e) => setEventData({ ...eventData, internalTime: e.target.value })} className="w-full px-3 py-2 mb-2 bg-white border rounded" />
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">End Time</label>
+                                    <input type="time" value={eventData.internalEndTime} onChange={(e) => setEventData({ ...eventData, internalEndTime: e.target.value })} className="w-full px-3 py-2 bg-white border rounded" />
+                                </div>
+                                <div className="p-4 border rounded bg-gray-50">
+                                    <h4 className="font-bold mb-2">External Schedule</h4>
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">Date</label>
+                                    <input type="date" value={eventData.externalDate} onChange={(e) => setEventData({ ...eventData, externalDate: e.target.value })} className="w-full px-3 py-2 mb-2 bg-white border rounded" />
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">Start Time</label>
+                                    <input type="time" value={eventData.externalTime} onChange={(e) => setEventData({ ...eventData, externalTime: e.target.value })} className="w-full px-3 py-2 mb-2 bg-white border rounded" />
+                                    <label className="block text-sm text-gray-600 font-bold mb-1">End Time</label>
+                                    <input type="time" value={eventData.externalEndTime} onChange={(e) => setEventData({ ...eventData, externalEndTime: e.target.value })} className="w-full px-3 py-2 bg-white border rounded" />
+                                </div>
+                            </div>
+                        )}
 
                         {(eventData.participationType === 'team' || eventData.participationType === 'both') && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 animate-in slide-in-from-top-2 duration-300">

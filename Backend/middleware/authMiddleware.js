@@ -23,6 +23,24 @@ const protect = async (req, res, next) => {
     }
 };
 
+// Attach user if a valid Bearer token is present, but do not fail if missing/invalid.
+const attachUserIfPresent = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer')) {
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
+            if (user) {
+                req.user = user;
+            }
+        }
+    } catch (error) {
+        // ignore token errors and proceed without attaching user
+    }
+    next();
+};
+
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
@@ -34,4 +52,4 @@ const authorize = (...roles) => {
     };
 };
 
-module.exports = { protect, authorize };
+module.exports = { protect, authorize, attachUserIfPresent };

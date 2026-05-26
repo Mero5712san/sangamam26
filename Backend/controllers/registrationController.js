@@ -245,6 +245,19 @@ exports.getAssignedRegistrations = async (req, res) => {
     }
 };
 
+exports.getAllRegistrations = async (req, res) => {
+    try {
+        const registrations = await Registration.findAll({
+            include: [{ model: User, as: 'user' }, { model: Event, as: 'event' }],
+            order: [[{ model: User, as: 'user' }, 'name', 'ASC']]
+        });
+
+        res.json(registrations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.getUserRegistrations = async (req, res) => {
     try {
         const user = await User.findOne({ where: { uuid: req.params.uuid } });

@@ -25,6 +25,14 @@ const Event = sequelize.define('Event', {
     description: { type: DataTypes.TEXT },
     date: { type: DataTypes.STRING },
     time: { type: DataTypes.STRING },
+    endTime: { type: DataTypes.STRING },
+    // Per-audience scheduling (optional) - if set, controllers will prefer these
+    internalDate: { type: DataTypes.STRING },
+    internalTime: { type: DataTypes.STRING },
+    internalEndTime: { type: DataTypes.STRING },
+    externalDate: { type: DataTypes.STRING },
+    externalTime: { type: DataTypes.STRING },
+    externalEndTime: { type: DataTypes.STRING },
     venue: { type: DataTypes.STRING },
     audienceType: {
         type: DataTypes.ENUM('internal', 'external', 'both'),

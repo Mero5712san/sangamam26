@@ -33,6 +33,7 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
 
     const sameSlotCount = sameSlotEvents.length;
     const isSlotFull = sameSlotCount >= 2;
+    const eventTimeRange = event?.time && event?.endTime ? `${event.time}-${event.endTime}` : (event?.time || event?.endTime || 'Time to be announced');
 
     useEffect(() => {
         const loadEligibleMembers = async () => {
@@ -129,7 +130,7 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                             <div className="space-y-3 text-gray-700">
                                 <div className="flex items-center gap-3">
                                     <Clock size={20} className="text-sangamam-gold" />
-                                    <span>{event.date} • {event.time}</span>
+                                    <span>{event.date ? `${event.date} • ${eventTimeRange}` : eventTimeRange}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Users size={20} className="text-sangamam-gold" />

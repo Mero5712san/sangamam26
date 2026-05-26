@@ -105,14 +105,30 @@ const ensureEventAudienceColumn = async () => {
     });
 };
 
+const ensureEventEndTimeColumn = async () => {
+    const queryInterface = sequelize.getQueryInterface();
+    const tableDefinition = await queryInterface.describeTable('Events');
+
+    if (tableDefinition.endTime) {
+        return;
+    }
+
+    await queryInterface.addColumn('Events', 'endTime', {
+        type: DataTypes.STRING,
+        allowNull: true
+    });
+};
+
 // DB Connection
 // Use plain sync so startup does not keep reworking existing MySQL indexes.
 sequelize.sync().then(() => {
     return ensureEventAudienceColumn();
 }).then(() => {
+    return ensureEventEndTimeColumn();
+}).then(() => {
     return syncExistingEventAssignments();
 }).then(() => {
-    console.log('MySQL Database synced, event visibility ensured, and event assignments refreshed...');
+    console.log('MySQL Database synced, event visibility/time columns ensured, and event assignments refreshed...');
 }).catch(err => {
     console.log('Database sync error:', err);
 });
@@ -124,6 +140,7 @@ app.use('/api/registrations', require('./routes/registrations'));
 app.use('/api/volunteers', require('./routes/volunteers'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/documents', require('./routes/documents'));
+app.use('/api/logs', require('./routes/logs'));
 
 app.get('/', (req, res) => {
     res.send('Sangamam API is running...');

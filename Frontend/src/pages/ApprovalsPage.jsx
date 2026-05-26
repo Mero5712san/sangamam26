@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, Search, CheckCircle, XCircle, X, UserCheck, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { QrCode, Search, CheckCircle, XCircle, X } from 'lucide-react';
 import { useNotificationStore } from '../store/notificationStore';
-import { eventAPI, registrationAPI, userAPI } from '../services/api';
+import { registrationAPI, userAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export function ApprovalsPage() {
+    const { role } = useAuthStore();
     const { addNotification } = useNotificationStore();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
@@ -13,11 +15,72 @@ export function ApprovalsPage() {
     const [participants, setParticipants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const getAttendancePriority = (status) => {
+        switch (String(status || '').toLowerCase()) {
+            case 'participating':
+                return 3;
+            case 'absent':
+                return 2;
+            case 'registered':
+                return 1;
+            default:
+                return 0;
+        }
+    };
+
+    const groupParticipantsByUser = (rows) => {
+        const grouped = new Map();
+
+        for (const reg of rows) {
+            if (!reg.id) continue;
+
+            const existing = grouped.get(reg.id) || {
+                id: reg.id,
+                uuid: reg.uuid,
+                name: reg.name,
+                email: reg.email,
+                phone: reg.phone,
+                college: reg.college,
+                year: reg.year,
+                attendance: reg.attendance,
+                accountStatus: reg.accountStatus,
+                regIds: [],
+                eventNames: []
+            };
+
+            existing.regIds.push(reg.regId);
+
+            if (reg.eventName && !existing.eventNames.includes(reg.eventName)) {
+                existing.eventNames.push(reg.eventName);
+            }
+
+            if (getAttendancePriority(reg.attendance) > getAttendancePriority(existing.attendance)) {
+                existing.attendance = reg.attendance;
+            }
+
+            grouped.set(reg.id, existing);
+        }
+
+        return Array.from(grouped.values()).map((participant) => ({
+            ...participant,
+            eventLabel: participant.eventNames.length === 0
+                ? 'No events'
+                : participant.eventNames.length === 1
+                    ? participant.eventNames[0]
+                    : `${participant.eventNames.length} events`
+        }));
+    };
+
     useEffect(() => {
-        const loadAssignedRegistrations = async () => {
+        const loadRegistrations = async () => {
             setIsLoading(true);
             try {
-                const { data } = await registrationAPI.getAssigned();
+                const response = role === 'admin'
+                    ? await registrationAPI.getAll()
+                    : await registrationAPI.getAssigned();
+
+                const { data } = response;
+
                 // map registrations into participant rows (one per registration)
                 const rows = (Array.isArray(data) ? data : []).map((reg) => ({
                     regId: reg.id,
@@ -33,7 +96,7 @@ export function ApprovalsPage() {
                     eventId: reg.event?.id,
                     eventName: reg.event?.name,
                 }));
-                setParticipants(rows);
+                setParticipants(groupParticipantsByUser(rows));
             } catch (error) {
                 addNotification({ type: 'error', title: 'Load failed', message: error?.response?.data?.message || 'Failed to load participants' });
                 setParticipants([]);
@@ -42,8 +105,8 @@ export function ApprovalsPage() {
             }
         };
 
-        loadAssignedRegistrations();
-    }, []);
+        loadRegistrations();
+    }, [role]);
 
     const handleAccountStatusChange = async (userId, newStatus) => {
         try {
@@ -59,18 +122,31 @@ export function ApprovalsPage() {
 
     const handleAttendanceChange = async (regId, newStatus) => {
         try {
-            await registrationAPI.markAttendance(regId, newStatus);
-            setParticipants((prev) => prev.map(p => p.regId === regId ? { ...p, attendance: newStatus } : p));
+            const regIds = Array.isArray(regId) ? regId : [regId];
+            await Promise.all(regIds.map((id) => registrationAPI.markAttendance(id, newStatus)));
+            setParticipants((prev) => prev.map((participant) => (
+                participant.regIds?.some((id) => regIds.includes(id))
+                    ? { ...participant, attendance: newStatus }
+                    : participant
+            )));
             addNotification({ type: 'attendance', title: 'Attendance Updated', message: `Marked ${newStatus}` });
         } catch (error) {
             addNotification({ type: 'error', title: 'Update failed', message: error?.response?.data?.message || 'Failed to update attendance' });
         }
     };
 
-    const filteredParticipants = participants.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const normalizedSearchTerm = searchTerm.toLowerCase();
+    const filteredParticipants = participants.filter((p) => {
+        const participantName = String(p.name || '').toLowerCase();
+        const participantEmail = String(p.email || '').toLowerCase();
+
+        return (
+            participantName.includes(normalizedSearchTerm) ||
+            participantEmail.includes(normalizedSearchTerm)
+        );
+    });
+
+    const getInitial = (value) => String(value || '?').trim().charAt(0).toUpperCase() || '?';
 
     // Long press logic
     const timerRef = useRef(null);
@@ -102,7 +178,7 @@ export function ApprovalsPage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sangamam-gold">In-Charge Tools</p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-sangamam-gold">{role === 'admin' ? 'Admin Tools' : 'In-Charge Tools'}</p>
                     <h1 className="mt-2 text-4xl font-bold text-white">Attendance & Approvals</h1>
                     <p className="mt-2 text-gray-400">Mark attendance. <span className="font-semibold text-sangamam-gold">Long press</span> or <span className="font-semibold text-sangamam-gold">right-click</span> a participant to change their status.</p>
                 </div>
@@ -159,11 +235,12 @@ export function ApprovalsPage() {
                                         <td className={`py-4 px-4 rounded-l-2xl border-y border-l transition-all ${styles.bg} ${styles.border}`}>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex-shrink-0 h-10 w-10 rounded-full bg-sangamam-maroon-deep border border-sangamam-border flex items-center justify-center text-sangamam-gold font-bold shadow-lg">
-                                                    {p.name.charAt(0)}
+                                                    {getInitial(p.name)}
                                                 </div>
                                                 <div>
                                                     <p className={`font-bold transition-colors ${styles.text}`}>{p.name}</p>
                                                     <p className="text-sm text-gray-500">{p.email}</p>
+                                                    {/* <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mt-1">{p.eventLabel}</p> */}
                                                 </div>
                                             </div>
                                         </td>
@@ -171,14 +248,14 @@ export function ApprovalsPage() {
                                             <div className="flex items-center justify-end">
                                                 <div className="flex items-center gap-2">
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); handleAttendanceChange(p.regId, 'participating'); }}
+                                                        onClick={(e) => { e.stopPropagation(); handleAttendanceChange(p.regIds, 'participating'); }}
                                                         title="Mark Present"
                                                         className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-sm font-bold"
                                                     >
                                                         Present
                                                     </button>
                                                     <button
-                                                        onClick={(e) => { e.stopPropagation(); handleAttendanceChange(p.regId, 'absent'); }}
+                                                        onClick={(e) => { e.stopPropagation(); handleAttendanceChange(p.regIds, 'absent'); }}
                                                         title="Mark Absent"
                                                         className="px-3 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-sm font-bold"
                                                     >
@@ -186,10 +263,10 @@ export function ApprovalsPage() {
                                                     </button>
                                                     <span
                                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold border transition-all ${p.attendance === 'participating'
-                                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                                : p.attendance === 'absent'
-                                                                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                                                                    : 'bg-white/5 text-gray-400 border-sangamam-border'
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                                            : p.attendance === 'absent'
+                                                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                                                : 'bg-white/5 text-gray-400 border-sangamam-border'
                                                             }`}
                                                     >
                                                         {p.attendance === 'participating' ? <CheckCircle size={16} /> : <XCircle size={16} />}
@@ -223,19 +300,20 @@ export function ApprovalsPage() {
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-3">
                                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-sangamam-maroon-deep border border-sangamam-border flex items-center justify-center text-sangamam-gold font-bold shadow-lg">
-                                            {p.name.charAt(0)}
+                                            {getInitial(p.name)}
                                         </div>
                                         <div>
                                             <p className={`font-bold transition-colors ${styles.text}`}>{p.name}</p>
                                             <p className="text-xs text-gray-500">{p.email}</p>
+                                            <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mt-1">{p.eventLabel}</p>
                                         </div>
                                     </div>
                                     <span
                                         className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold border transition-all ${p.attendance === 'participating'
-                                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                                                : p.attendance === 'absent'
-                                                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                                                    : 'bg-white/5 text-gray-400 border-sangamam-border'
+                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                                            : p.attendance === 'absent'
+                                                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                                : 'bg-white/5 text-gray-400 border-sangamam-border'
                                             }`}
                                     >
                                         {p.attendance === 'participating' ? <CheckCircle size={12} /> : <XCircle size={12} />}
