@@ -26,6 +26,10 @@ const Event = sequelize.define('Event', {
     date: { type: DataTypes.STRING },
     time: { type: DataTypes.STRING },
     venue: { type: DataTypes.STRING },
+    audienceType: {
+        type: DataTypes.ENUM('internal', 'external', 'both'),
+        defaultValue: 'external'
+    },
     registrationType: {
         type: DataTypes.ENUM('solo', 'team', 'both'),
         defaultValue: 'solo'
@@ -37,6 +41,13 @@ const Event = sequelize.define('Event', {
     instructions: {
         type: DataTypes.JSON,
         defaultValue: []
+    },
+    documents: {
+        type: DataTypes.JSON,
+        defaultValue: {
+            rulebook: null,
+            schedule: null
+        }
     },
     coordinators: {
         type: DataTypes.JSON,

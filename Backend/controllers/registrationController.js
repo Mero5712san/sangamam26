@@ -4,8 +4,15 @@ const User = require('../models/User');
 const QRCode = require('qrcode');
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
 const isStaffRole = (role) => ['admin', 'incharge', 'volunteer'].includes(role);
+
+const countRegistrationsForSlot = (registrations, event) => registrations.filter((registration) => {
+    const registrationEvent = registration.event;
+    return normalizeText(registrationEvent?.date) === normalizeText(event?.date)
+        && normalizeText(registrationEvent?.time) === normalizeText(event?.time);
+}).length;
 
 const collectTakenEmailsForEvent = async (eventId) => {
     const regs = await Registration.findAll({
@@ -50,6 +57,17 @@ exports.registerEvent = async (req, res) => {
 
         const event = await Event.findByPk(eventId);
         if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        const existingRegistrations = await Registration.findAll({
+            where: { userId },
+            include: [{ model: Event, as: 'event', attributes: ['id', 'date', 'time'] }]
+        });
+        const registrationsAtSameSlot = countRegistrationsForSlot(existingRegistrations, event);
+        if (registrationsAtSameSlot >= 2) {
+            return res.status(400).json({
+                message: `You can register for only 2 events at ${event.time} on ${event.date}`
+            });
+        }
 
         if (type === 'team') {
             const members = Array.isArray(teamDetails?.members) ? teamDetails.members : [];

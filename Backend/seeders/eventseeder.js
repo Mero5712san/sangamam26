@@ -69,7 +69,7 @@ const events = [
     ],
     coordinators: [
       {
-        name: "மிரோசன் பி",
+        name: "மிரோசன் ப",
         phone: "7825955712"
       },
       {

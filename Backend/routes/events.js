@@ -11,7 +11,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-const { getEvents, getAssignedEvents, getEventBySlug, createEvent, updateEvent, updateReport } = require('../controllers/eventController');
+const { getEvents, getAssignedEvents, getEventBySlug, createEvent, updateEvent, updateReport, updateEventDocument, deleteEventDocument } = require('../controllers/eventController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.get('/', getEvents);
@@ -20,5 +20,7 @@ router.get('/:slug', getEventBySlug);
 router.post('/', protect, authorize('admin'), createEvent);
 router.put('/:slug', protect, authorize('admin', 'incharge'), updateEvent);
 router.patch('/:slug/report', protect, authorize('admin', 'incharge'), upload.single('geoImage'), updateReport);
+router.patch('/:slug/documents/:type', protect, authorize('admin'), upload.single('document'), updateEventDocument);
+router.delete('/:slug/documents/:type', protect, authorize('admin'), deleteEventDocument);
 
 module.exports = router;

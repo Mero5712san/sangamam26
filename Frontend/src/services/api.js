@@ -1,8 +1,16 @@
 import axios from 'axios';
 
+export const API_BASE_URL = 'http://localhost:5000';
+
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: `${API_BASE_URL}/api`,
 });
+
+export const resolveApiUrl = (value) => {
+    if (!value) return '';
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    return value.startsWith('/') ? `${API_BASE_URL}${value}` : `${API_BASE_URL}/${value}`;
+};
 
 // Add token to requests
 API.interceptors.request.use((config) => {
@@ -29,6 +37,14 @@ export const eventAPI = {
     create: (data) => API.post('/events', data),
     update: (slug, data) => API.put(`/events/${slug}`, data),
     updateReport: (slug, reportData) => API.patch(`/events/${slug}/report`, reportData),
+    updateDocument: (slug, type, formData) => API.patch(`/events/${slug}/documents/${type}`, formData),
+    deleteDocument: (slug, type) => API.delete(`/events/${slug}/documents/${type}`),
+};
+
+export const documentsAPI = {
+    getShared: () => API.get('/documents'),
+    uploadShared: (type, formData) => API.patch(`/documents/${type}`, formData),
+    deleteShared: (type) => API.delete(`/documents/${type}`),
 };
 
 export const registrationAPI = {

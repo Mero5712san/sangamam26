@@ -1,22 +1,25 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarDays, ListChecks, BarChart3, UserCheck, Users, FileClock, LogOut, FileText } from 'lucide-react';
+import { CalendarDays, ListChecks, BarChart3, UserCheck, Users, FileClock, FileText, LogOut } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const roleLinks = {
     participant: [
         { label: 'Events', href: '/events', icon: CalendarDays },
         { label: 'My Events', href: '/registrations', icon: ListChecks },
+        { label: 'Rulebook / Schedule', href: '/documents', icon: FileText },
     ],
     incharge: [
         { label: 'Events', href: '/events', icon: CalendarDays },
         { label: 'My Events', href: '/registrations', icon: ListChecks },
+        { label: 'Rulebook / Schedule', href: '/documents', icon: FileText },
         { label: 'Stats', href: '/analytics', icon: BarChart3 },
         { label: 'Approvals', href: '/approvals', icon: UserCheck },
         { label: 'Reports', href: '/reports', icon: FileText },
     ],
     admin: [
         { label: 'Events', href: '/events', icon: CalendarDays },
+        { label: 'Rulebook / Schedule', href: '/documents', icon: FileText },
         { label: 'Stats', href: '/analytics', icon: BarChart3 },
         { label: 'Approvals', href: '/approvals', icon: UserCheck },
         { label: 'Volunteers', href: '/volunteers', icon: Users },
@@ -41,7 +44,13 @@ export function Sidebar({ onClose }) {
                 </button>
             )}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-sangamam-gold">Sangamam</h1>
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 shrink-0">
+                        <img src="/BIT%20Logo.png" alt="College logo" className="h-9 w-9 object-contain" />
+                        <img src="/Mandran%20Logo.png" alt="Mandran logo" className="h-9 w-9 object-contain" />
+                    </div>
+                    <h1 className="text-3xl font-bold leading-none text-sangamam-gold">சங்கமம்</h1>
+                </div>
             </div>
             <nav className="flex-1">
                 <ul className="space-y-2">

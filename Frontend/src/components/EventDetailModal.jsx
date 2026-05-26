@@ -24,6 +24,16 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
         ...(event?.incharge ? [event.incharge] : [])
     ].filter(Boolean);
 
+    const normalizeText = (value) => String(value || '').trim().toLowerCase();
+
+    const sameSlotEvents = myEvents.filter((registeredEvent) => (
+        normalizeText(registeredEvent.date) === normalizeText(event.date)
+        && normalizeText(registeredEvent.time) === normalizeText(event.time)
+    ));
+
+    const sameSlotCount = sameSlotEvents.length;
+    const isSlotFull = sameSlotCount >= 2;
+
     useEffect(() => {
         const loadEligibleMembers = async () => {
             if ((participationMode === 'team' || isRegisteringTeam) && event?.id) {
@@ -43,14 +53,13 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
     }, [participationMode, isRegisteringTeam, event?.id]);
 
     const handleRegisterClick = () => {
-        if (myEvents.length >= 2) {
-            return; // Blocked in UI anyway, but safety first
+        if (isSlotFull) {
+            return;
         }
         setShowConfirmModal(true);
     };
 
-    const hasClash = myEvents.some(e => e.date === event.date && e.time === event.time);
-    const isMaxReached = myEvents.length >= 2;
+    const hasClash = sameSlotCount > 0;
 
     const confirmRegistration = () => {
         setShowConfirmModal(false);
@@ -228,11 +237,15 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                                     </div>
                                 </div>
                             ) : isStaffRole ? (
-                                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
-                                    Staff accounts cannot register for events.
+                                <div className="space-y-3">
+
+                                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
+                                        Staff accounts cannot register for events.
+                                    </div>
                                 </div>
                             ) : (
                                 <>
+
                                     {status === 'registered' && (
                                         <button className="bg-green-600 w-full py-3 font-bold text-white rounded cursor-default" disabled>
                                             Registered
@@ -331,13 +344,13 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                                                         )}
                                                         <button
                                                             onClick={handleRegisterClick}
-                                                            disabled={isMaxReached}
-                                                            className={`flex-1 py-3 font-bold rounded-xl transition-all ${isMaxReached
+                                                            disabled={isSlotFull}
+                                                            className={`flex-1 py-3 font-bold rounded-xl transition-all ${isSlotFull
                                                                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5'
                                                                 : 'sangamam-button'
                                                                 }`}
                                                         >
-                                                            {isMaxReached ? 'Max Events Reached (2/2)' : (regType === 'team' || participationMode === 'team' ? 'Register Team' : 'Register Now')}
+                                                            {isSlotFull ? `Max Events Reached (${sameSlotCount}/2 at this time)` : (regType === 'team' || participationMode === 'team' ? 'Register Team' : 'Register Now')}
                                                         </button>
                                                     </div>
                                                 </>
@@ -374,13 +387,18 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                             <Clock className="text-sangamam-gold" size={32} />
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">
-                            {hasClash ? 'Schedule Conflict!' : 'Confirm Registration'}
+                            {isSlotFull ? 'Schedule Limit Reached!' : hasClash ? 'Shared Time Slot' : 'Confirm Registration'}
                         </h3>
                         <p className="text-gray-400 text-sm mb-6">
-                            {hasClash ? (
+                            {isSlotFull ? (
                                 <>
-                                    You already have an event scheduled at <span className="text-sangamam-gold font-bold">{event.time}</span> on <span className="text-sangamam-gold font-bold">{event.date}</span>.
-                                    <span className="block mt-2 text-white font-semibold italic">"You have to complete any one and move to next event."</span>
+                                    You already have <span className="text-sangamam-gold font-bold">2 events</span> scheduled at <span className="text-sangamam-gold font-bold">{event.time}</span> on <span className="text-sangamam-gold font-bold">{event.date}</span>.
+                                    <span className="block mt-2 text-white font-semibold italic">You can register for at most 2 events in the same time slot.</span>
+                                </>
+                            ) : hasClash ? (
+                                <>
+                                    You already have <span className="text-sangamam-gold font-bold">{sameSlotCount} event{sameSlotCount > 1 ? 's' : ''}</span> scheduled at <span className="text-sangamam-gold font-bold">{event.time}</span> on <span className="text-sangamam-gold font-bold">{event.date}</span>.
+                                    <span className="block mt-2 text-white font-semibold italic">You can still register for one more event at this same time.</span>
                                 </>
                             ) : (
                                 <>
@@ -397,10 +415,10 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                                 Cancel
                             </button>
                             <button
-                                onClick={confirmRegistration}
+                                onClick={isSlotFull ? () => setShowConfirmModal(false) : confirmRegistration}
                                 className="flex-1 py-3 rounded-xl bg-sangamam-gold text-white font-bold hover:bg-sangamam-maroon transition-all shadow-lg"
                             >
-                                {hasClash ? 'Register Anyway' : 'Confirm'}
+                                {isSlotFull ? 'Close' : hasClash ? 'Register Anyway' : 'Confirm'}
                             </button>
                         </div>
                     </div>

@@ -114,7 +114,7 @@ export function RegistrationsPage() {
             {/* Title */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h1 className="mt-2 text-4xl font-extrabold text-white tracking-tight">
-                    {role === 'incharge' ? 'Assigned Events' : 'My Events'}
+                    {role === 'incharge' ? 'உங்கள் நிகழ்வுகள்' : 'பங்கேற்கும் நிகழ்வுகள்'}
                 </h1>
             </div>
 

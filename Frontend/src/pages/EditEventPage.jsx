@@ -22,6 +22,7 @@ export function EditEventPage() {
         description: '',
         date: '',
         time: '',
+        audienceType: 'external',
         registrationType: 'individual',
         participationType: 'solo',
         minTeamSize: 2,
@@ -44,6 +45,7 @@ export function EditEventPage() {
                     setIsAllowed(user?.role === 'admin' || canManageEvent(user, data));
                     setEventData({
                         ...data,
+                        audienceType: data.audienceType || 'external',
                         participationType: data.participationType || data.registrationType || 'solo',
                         incharges: data.incharges || data.coordinators || [{ name: '', phone: '', email: '' }],
                         instructions: data.instructions || ['']
@@ -212,6 +214,18 @@ export function EditEventPage() {
                                     onChange={(e) => setEventData({ ...eventData, time: e.target.value })}
                                     className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-600 font-bold mb-2">Audience</label>
+                                <select
+                                    value={eventData.audienceType}
+                                    onChange={(e) => setEventData({ ...eventData, audienceType: e.target.value })}
+                                    className="w-full px-4 py-2 bg-gray-50 border border-sangamam-border rounded focus:bg-white focus:outline-none focus:ring-2 focus:ring-sangamam-gold"
+                                >
+                                    <option value="external">External Participants</option>
+                                    <option value="internal">Internal Participants</option>
+                                    <option value="both">Both</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm text-gray-600 font-bold mb-2">Participation Mode</label>

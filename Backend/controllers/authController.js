@@ -32,59 +32,41 @@ exports.sendOtp = async (req, res) => {
             await OtpVerification.create({ email, otp, otpExpires });
         }
 
+        const appBase = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+
         await sendEmail({
             email: email,
             subject: 'Verify your email address - Sangamam',
             html: `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
-                    <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 700px; margin: 0 auto; background-color: #2a130d; padding: 20px;">
+                    <div style="background: linear-gradient(180deg,#3d1c13,#2a130d); border-radius: 12px; overflow: hidden; border: 2px solid #6b3f26;">
                         <!-- Header with Logo -->
-                        <div style="padding: 20px; text-align: center;">
-                            <div style="width: 50px; hieght: 50px; border: 2px solid #333; border-radius: 50%; display: inline-block; line-height: 50px; font-weight: bold; font-size: 10px;">LOGO</div>
+                        <div style="padding: 24px; text-align: center;">
+                            <img src="${appBase}/logo.png" alt="Sangamam" style="width:72px; height:72px; object-fit:contain; display:block; margin:0 auto;" />
                         </div>
 
-                        <!-- Red Banner with Icon -->
-                        <div style="background-color: #e3524f; padding: 40px; text-align: center;">
-                            <div style="background-color: #ffffff; width: 80px; height: 80px; border-radius: 50%; display: inline-block; line-height: 80px; text-align: center;">
-                                <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" width="40" style="vertical-align: middle; margin-top: -5px;" />
-                            </div>
+                        <!-- Banner -->
+                        <div style="background: linear-gradient(90deg,#3d1c13,#2a130d); padding: 30px 20px; text-align: center;">
+                            <h1 style="color: #f1c40f; font-size: 22px; margin: 0;">Email verification</h1>
                         </div>
 
                         <!-- Content -->
-                        <div style="padding: 40px; text-align: left; color: #333;">
-                            <h1 style="font-size: 28px; margin-bottom: 20px; color: #2c3e50;">Email verification</h1>
-                            <p style="font-size: 16px; line-height: 1.5; color: #555;">Hi there,</p>
-                            <p style="font-size: 16px; line-height: 1.5; color: #555;">
-                                You're almost set to start enjoying <strong>Sangamam Portal</strong>. 
-                                Please use the 6-digit verification code below to verify your email address and get started.
-                            </p>
+                        <div style="padding: 30px; color: #f5e1b3; text-align: center;">
+                            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hi there,</p>
+                            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0 0 20px 0;">You're almost set to start using <strong>Sangamam Portal</strong>. Use the 6-digit verification code below to verify your email address.</p>
 
-                            <div style="text-align: center; margin: 40px 0;">
-                                <div style="display: inline-block; padding: 15px 30px; background-color: #e3524f; color: #ffffff; font-size: 32px; font-weight: bold; letter-spacing: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(227, 82, 79, 0.2);">
-                                    ${otp}
-                                </div>
-                                <p style="font-size: 12px; color: #999; margin-top: 10px;">This code expires in 10 minutes</p>
+                            <div style="margin: 20px 0;">
+                                <div style="display:inline-block; padding:18px 36px; background-color:#f1c40f; color:#2a130d; font-size:28px; font-weight:700; letter-spacing:8px; border-radius:10px;">${otp}</div>
+                                <div style="font-size:12px; color:#d6c7a3; margin-top:10px;">This code expires in 10 minutes</div>
                             </div>
 
-                            <div style="border-top: 1px solid #eeeeee; margin: 30px 0;"></div>
+                            <div style="margin-top:24px; font-size:13px; color:#d6c7a3;">If you didn't request this, you can safely ignore this email.</div>
+                        </div>
 
-                            <!-- Footer Links/Social -->
-                            <div style="text-align: center;">
-                                <div style="margin-bottom: 20px;">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174848.png" width="24" style="margin: 0 10px;" />
-                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174855.png" width="24" style="margin: 0 10px;" />
-                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="24" style="margin: 0 10px;" />
-                                    <img src="https://cdn-icons-png.flaticon.com/512/174/174883.png" width="24" style="margin: 0 10px;" />
-                                </div>
-                                <p style="font-size: 12px; color: #999; line-height: 1.5;">
-                                    Bannari Amman Institute of Technology<br/>
-                                    Sathyamangalam, Erode, Tamil Nadu 638401
-                                </p>
-                                <p style="font-size: 12px; color: #999; margin-top: 20px;">
-                                    <a href="#" style="color: #999; text-decoration: underline;">Privacy Policy</a> | 
-                                    <a href="#" style="color: #999; text-decoration: underline;">Contact Details</a>
-                                </p>
-                            </div>
+                        <!-- Footer -->
+                        <div style="padding:18px; text-align:center; background:#3d1c13; color:#b8860b; font-size:12px;">
+                            <div>Bannari Amman Institute of Technology — Sathyamangalam</div>
+                            <div style="margin-top:8px;"><a href="#" style="color:#b8860b; text-decoration:underline;">Privacy Policy</a> | <a href="#" style="color:#b8860b; text-decoration:underline;">Contact</a></div>
                         </div>
                     </div>
                 </div>
@@ -122,6 +104,7 @@ exports.registerUser = async (req, res) => {
 
         // 5. Send Success Email
         console.log(`Attempting to send registration success email to: ${user.email}`);
+        const appBase = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
         await sendEmail({
             email: user.email,
             subject: 'Registration Successful - Muthamizh Sangamam 2026',
@@ -135,9 +118,9 @@ exports.registerUser = async (req, res) => {
                          <div style="color: #ffffff; font-style: italic; font-size: 14px;">தமிழன்புடன் வழங்கும்</div>
                     </div>
 
-                    <!-- Cultural Graphic (Placeholder) -->
+                    <!-- Cultural Graphic (Emblem) -->
                     <div style="text-align: center; padding: 20px;">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3468/3468380.png" width="80" style="filter: sepia(1) saturate(5) hue-rotate(340deg);" />
+                        <img src="${encodeURI(appBase + '/public/Mandran Logo.png')}" width="120" style="display:block; margin:0 auto;" />
                     </div>
 
                     <!-- Main Content -->

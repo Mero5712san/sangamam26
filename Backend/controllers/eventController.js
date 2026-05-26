@@ -1,7 +1,28 @@
+const fs = require('fs');
+const path = require('path');
 const Event = require('../models/Event');
 const User = require('../models/User');
 
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
+
+const isInternalUser = (user) => {
+    const college = normalizeText(user?.college);
+    return /\bbannari amman institute of technology\b|\bbit sathy\b|\bbit\b/.test(college);
+};
+
+const isEventVisibleToUser = (event, user) => {
+    if (!event) return false;
+    if (user?.role === 'admin') return true;
+
+    const audienceType = normalizeText(event.audienceType || 'external');
+    const internalUser = isInternalUser(user);
+
+    if (audienceType === 'both') return true;
+    if (audienceType === 'internal') return internalUser;
+    if (audienceType === 'external') return true;
+
+    return true;
+};
 
 const normalizeAssignedEventIds = (assignedEventIds) => {
     const values = Array.isArray(assignedEventIds)
@@ -104,20 +125,58 @@ const normalizeEventPayload = (payload) => {
         normalized.registrationType = normalized.participationType;
     }
 
+    if (normalized.visibilityType && !normalized.audienceType) {
+        normalized.audienceType = normalized.visibilityType;
+    }
+
+    if (normalized.audience && !normalized.audienceType) {
+        normalized.audienceType = normalized.audience;
+    }
+
     if (typeof normalized.icon === 'string' && normalized.icon.startsWith('/') && !normalized.image) {
         normalized.image = normalized.icon;
     }
 
     delete normalized.incharges;
     delete normalized.participationType;
+    delete normalized.visibilityType;
+    delete normalized.audience;
 
     return normalized;
+};
+
+const allowedDocumentTypes = new Set(['rulebook', 'schedule']);
+
+const serializeUploadedDocument = (file) => ({
+    url: `/uploads/${file.filename}`,
+    name: file.originalname,
+    mimeType: file.mimetype,
+    size: file.size
+});
+
+const getStoredDocumentPath = (documentValue) => {
+    const documentUrl = typeof documentValue === 'string' ? documentValue : documentValue?.url;
+    if (!documentUrl || !documentUrl.startsWith('/uploads/')) return null;
+    return path.join(__dirname, '..', documentUrl);
+};
+
+const deleteStoredDocumentFile = async (documentValue) => {
+    const filePath = getStoredDocumentPath(documentValue);
+    if (!filePath) return;
+
+    try {
+        await fs.promises.unlink(filePath);
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            throw error;
+        }
+    }
 };
 
 exports.getEvents = async (req, res) => {
     try {
         const events = await Event.findAll();
-        res.json(events);
+        res.json(events.filter((event) => isEventVisibleToUser(event, req.user)));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -149,7 +208,7 @@ exports.getAssignedEvents = async (req, res) => {
 exports.getEventBySlug = async (req, res) => {
     try {
         const event = await Event.findOne({ where: { slug: req.params.slug } });
-        if (event) {
+        if (event && isEventVisibleToUser(event, req.user)) {
             res.json(event);
         } else {
             res.status(404).json({ message: 'Event not found' });
@@ -222,6 +281,56 @@ exports.updateReport = async (req, res) => {
         event.reports = updatedReports;
         await event.save();
         res.json({ message: 'Report updated', reports: event.reports });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.updateEventDocument = async (req, res) => {
+    try {
+        const { type } = req.params;
+        if (!allowedDocumentTypes.has(type)) {
+            return res.status(400).json({ message: 'Invalid document type' });
+        }
+
+        const event = await Event.findOne({ where: { slug: req.params.slug } });
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'Please upload a file' });
+        }
+
+        const documents = { ...(event.documents || {}) };
+        await deleteStoredDocumentFile(documents[type]);
+        documents[type] = serializeUploadedDocument(req.file);
+
+        event.documents = documents;
+        await event.save();
+
+        res.json({ message: `${type} document uploaded`, documents: event.documents });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+exports.deleteEventDocument = async (req, res) => {
+    try {
+        const { type } = req.params;
+        if (!allowedDocumentTypes.has(type)) {
+            return res.status(400).json({ message: 'Invalid document type' });
+        }
+
+        const event = await Event.findOne({ where: { slug: req.params.slug } });
+        if (!event) return res.status(404).json({ message: 'Event not found' });
+
+        const documents = { ...(event.documents || {}) };
+        await deleteStoredDocumentFile(documents[type]);
+        documents[type] = null;
+
+        event.documents = documents;
+        await event.save();
+
+        res.json({ message: `${type} document deleted`, documents: event.documents });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

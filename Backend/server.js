@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const { DataTypes } = require('sequelize');
 
 // Load environment variables
 dotenv.config();
@@ -12,6 +13,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static assets from the frontend public folder (logo, images)
+app.use('/public', express.static(path.join(__dirname, '..', 'Frontend', 'public')));
 
 const sequelize = require('./config/db');
 require('./models/User');
@@ -87,12 +90,29 @@ const syncExistingEventAssignments = async () => {
     }
 };
 
+const ensureEventAudienceColumn = async () => {
+    const queryInterface = sequelize.getQueryInterface();
+    const tableDefinition = await queryInterface.describeTable('Events');
+
+    if (tableDefinition.audienceType) {
+        return;
+    }
+
+    await queryInterface.addColumn('Events', 'audienceType', {
+        type: DataTypes.ENUM('internal', 'external', 'both'),
+        allowNull: false,
+        defaultValue: 'external'
+    });
+};
+
 // DB Connection
-// Use non-destructive sync to avoid dropping tables/data on restart
-sequelize.sync({ alter: true }).then(() => {
+// Use plain sync so startup does not keep reworking existing MySQL indexes.
+sequelize.sync().then(() => {
+    return ensureEventAudienceColumn();
+}).then(() => {
     return syncExistingEventAssignments();
 }).then(() => {
-    console.log('MySQL Database synced and event assignments refreshed...');
+    console.log('MySQL Database synced, event visibility ensured, and event assignments refreshed...');
 }).catch(err => {
     console.log('Database sync error:', err);
 });
@@ -103,6 +123,7 @@ app.use('/api/events', require('./routes/events'));
 app.use('/api/registrations', require('./routes/registrations'));
 app.use('/api/volunteers', require('./routes/volunteers'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/documents', require('./routes/documents'));
 
 app.get('/', (req, res) => {
     res.send('Sangamam API is running...');

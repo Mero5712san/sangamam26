@@ -59,6 +59,7 @@ function toEventPayload(rawEvent) {
         icon: imagePath,
         tagline: rawEvent.tagline,
         description: descriptionParts.join(' | '),
+        audienceType: rawEvent.audienceType || 'external',
         registrationType: reg.registrationType,
         minTeamSize: reg.minTeamSize,
         maxTeamSize: reg.maxTeamSize,

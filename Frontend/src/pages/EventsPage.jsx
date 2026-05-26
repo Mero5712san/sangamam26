@@ -202,8 +202,8 @@ export function EventsPage({ embedded = false }) {
         <div className="space-y-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="mt-2 text-4xl font-bold text-white">Events Explorer</h2>
-                    <p className="text-gray-500 text-sm mt-1">Discover and join the best events</p>
+                    <h2 className="mt-2 text-4xl font-bold text-white">நிகழ்வுகள் அரங்கு</h2>
+                    {/* <p className="text-gray-500 text-sm mt-1">Discover and join the best events</p> */}
                 </div>
                 {user?.role === 'admin' && (
                     <button

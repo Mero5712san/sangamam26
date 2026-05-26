@@ -24,6 +24,8 @@ import { TeamManagementPage } from './pages/TeamManagementPage';
 import { ParticipantDetailPage } from './pages/ParticipantDetailPage';
 import { BlockedAccountPage } from './pages/BlockedAccountPage';
 import { SupportPage } from './pages/SupportPage';
+import { EventDocumentsPage } from './pages/EventDocumentsPage';
+import DocumentsViewer from './pages/DocumentsViewer';
 import { ToastContainer } from './components/ToastContainer';
 
 function ProtectedRoute({ children }) {
@@ -108,6 +110,13 @@ export default function App() {
           {/* Public Events Page, shown in the shell when authenticated */}
           <Route path="/events" element={user ? withShell(<EventsPage embedded />) : <EventsPage />} />
           <Route path="/event/:slug" element={user ? withShell(<EventsPage embedded />) : <EventsPage />} />
+          <Route path="/documents" element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />} />
+          <Route path="/documents/:slug" element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />} />
+          <Route path="/documents/view/:type" element={user ? withShell(<DocumentsViewer />) : <DocumentsViewer />} />
+          <Route
+            path="/event/:slug/documents"
+            element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />}
+          />
 
           <Route
             path="/registrations"
