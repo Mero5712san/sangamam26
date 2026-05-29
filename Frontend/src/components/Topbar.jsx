@@ -59,8 +59,8 @@ export function Topbar({ onBurgerClick, onProfileClick }) {
                                                     <div key={notif.id} className="p-4 hover:bg-white/5 transition-colors">
                                                         <div className="flex gap-3">
                                                             <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${notif.type === 'attendance' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                                    notif.type === 'status_change' ? 'bg-blue-500/20 text-blue-400' :
-                                                                        'bg-sangamam-gold/20 text-sangamam-gold'
+                                                                notif.type === 'status_change' ? 'bg-blue-500/20 text-blue-400' :
+                                                                    'bg-sangamam-gold/20 text-sangamam-gold'
                                                                 }`}>
                                                                 {getIcon(notif.icon)}
                                                             </div>

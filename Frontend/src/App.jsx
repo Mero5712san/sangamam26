@@ -26,6 +26,8 @@ import { BlockedAccountPage } from './pages/BlockedAccountPage';
 import { SupportPage } from './pages/SupportPage';
 import { EventDocumentsPage } from './pages/EventDocumentsPage';
 import DocumentsViewer from './pages/DocumentsViewer';
+import { PaymentConfirmationPage } from './pages/PaymentConfirmationPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 import { ToastContainer } from './components/ToastContainer';
 
 function ProtectedRoute({ children }) {
@@ -36,6 +38,8 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   const { user, refreshUser } = useAuthStore();
+  const isVolunteerLite = user?.role === 'volunteer';
+  const isIncharge = user?.role === 'incharge';
 
   useEffect(() => {
     // Attempt a one-time refresh from stored auth token so assignedEventIds are current
@@ -70,14 +74,16 @@ export default function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/events" />} />
+          <Route path="/blocked" element={<BlockedAccountPage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/sangamam/users/volunteers/register-new" element={<VolunteerRegistrationPage />} />
+          <Route path="/payment-confirmation" element={user ? withShell(<PaymentConfirmationPage />) : <Navigate to="/login" />} />
 
           {/* Protected Routes */}
           <Route
             path="/event/:slug/manage"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<ManageEventPage />)}
               </ProtectedRoute>
             }
@@ -85,7 +91,7 @@ export default function App() {
           <Route
             path="/event/:slug/manage/:uuid"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<ParticipantDetailPage />)}
               </ProtectedRoute>
             }
@@ -93,7 +99,7 @@ export default function App() {
           <Route
             path="/event/:slug/edit"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<EditEventPage />)}
               </ProtectedRoute>
             }
@@ -101,38 +107,30 @@ export default function App() {
           <Route
             path="/event/:slug/team"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<TeamManagementPage />)}
               </ProtectedRoute>
             }
           />
 
           {/* Public Events Page, shown in the shell when authenticated */}
-          <Route path="/events" element={user ? withShell(<EventsPage embedded />) : <EventsPage />} />
-          <Route path="/event/:slug" element={user ? withShell(<EventsPage embedded />) : <EventsPage />} />
+          <Route path="/events" element={isVolunteerLite ? <Navigate to="/volunteers" /> : user ? withShell(<EventsPage embedded />) : <EventsPage />} />
+          <Route path="/event/:slug" element={isVolunteerLite ? <Navigate to="/volunteers" /> : user ? withShell(<EventsPage embedded />) : <EventsPage />} />
           <Route path="/documents" element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />} />
           <Route path="/documents/:slug" element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />} />
           <Route path="/documents/view/:type" element={user ? withShell(<DocumentsViewer />) : <DocumentsViewer />} />
           <Route
             path="/event/:slug/documents"
-            element={user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />}
+            element={isVolunteerLite ? <Navigate to="/documents" /> : user ? withShell(<EventDocumentsPage />) : <EventDocumentsPage />}
           />
 
           <Route
             path="/registrations"
-            element={
-              <ProtectedRoute>
-                {withShell(<RegistrationsPage />)}
-              </ProtectedRoute>
-            }
+            element={isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>{withShell(<RegistrationsPage />)}</ProtectedRoute>}
           />
           <Route
             path="/approvals"
-            element={
-              <ProtectedRoute>
-                {withShell(<ApprovalsPage />)}
-              </ProtectedRoute>
-            }
+            element={isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>{withShell(<ApprovalsPage />)}</ProtectedRoute>}
           />
           <Route
             path="/approvals/user/:id"
@@ -144,24 +142,16 @@ export default function App() {
           />
           <Route
             path="/reports"
-            element={
-              <ProtectedRoute>
-                {withShell(<ReportsPage />)}
-              </ProtectedRoute>
-            }
+            element={isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>{withShell(<ReportsPage />)}</ProtectedRoute>}
           />
           <Route
             path="/scanner"
-            element={
-              <ProtectedRoute>
-                {withShell(<ScannerPage />)}
-              </ProtectedRoute>
-            }
+            element={isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>{withShell(<ScannerPage />)}</ProtectedRoute>}
           />
           <Route
             path="/volunteers"
             element={
-              <ProtectedRoute>
+              isIncharge ? <Navigate to="/events" /> : <ProtectedRoute>
                 {withShell(<VolunteersPage />)}
               </ProtectedRoute>
             }
@@ -169,7 +159,7 @@ export default function App() {
           <Route
             path="/volunteers/assign-job/:id"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<VolunteersPage />)}
               </ProtectedRoute>
             }
@@ -177,7 +167,7 @@ export default function App() {
           <Route
             path="/analytics"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<AnalyticsPage />)}
               </ProtectedRoute>
             }
@@ -185,7 +175,7 @@ export default function App() {
           <Route
             path="/college/:id"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<CollegeDetailPage />)}
               </ProtectedRoute>
             }
@@ -193,8 +183,16 @@ export default function App() {
           <Route
             path="/logs"
             element={
-              <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
                 {withShell(<LogsPage />)}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
+                {withShell(<PaymentsPage />)}
               </ProtectedRoute>
             }
           />

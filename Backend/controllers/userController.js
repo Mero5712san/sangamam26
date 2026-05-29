@@ -1,7 +1,35 @@
 const { Op } = require('sequelize');
+const path = require('path');
+const fs = require('fs');
 const User = require('../models/User');
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
+const sendEmail = require('../utils/sendEmail');
+const buildMailShell = require('../utils/emailTemplate');
+
+const PAYMENT_URL = 'https://payments.bitsathy.ac.in/muthamil-sangamam-2026';
+const paymentProofDir = path.join(__dirname, '..', 'uploads', 'payment-proofs');
+
+if (!fs.existsSync(paymentProofDir)) {
+    fs.mkdirSync(paymentProofDir, { recursive: true });
+}
+
+// Payment decision content builder (wrapped by shared buildMailShell when sending)
+const buildPaymentDecisionContent = ({ name, approved }) => {
+    const title = approved ? 'Payment Confirmed' : 'Payment Rejected';
+    const body = approved
+        ? `
+            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello <strong>${name}</strong>,</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0;">Your payment proof has been verified successfully. You are now fully confirmed for Muthamizh Sangamam 2026.</p>
+        `
+        : `
+            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello <strong>${name}</strong>,</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0 0 14px 0;">Your payment proof was rejected. Your account access has been disqualified.</p>
+            <p style="font-size: 13px; color:#d6c7a3; margin:0;">If this was a mistake, complete payment at <a href="${PAYMENT_URL}" style="color:#f1c40f;">${PAYMENT_URL}</a> and contact support.</p>
+        `;
+
+    return { title, content: body };
+};
 
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
@@ -128,5 +156,136 @@ exports.getCollegeDetails = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.submitPaymentProof = async (req, res) => {
+    try {
+        if (!req.user || req.user.role !== 'participant') {
+            return res.status(403).json({ message: 'Only participants can submit payment proof' });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.participantType !== 'external') {
+            return res.status(400).json({ message: 'Internal participants do not require payment proof' });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'Payment proof image is required' });
+        }
+
+        const safeName = req.file.originalname.replace(/\s+/g, '-');
+        const filename = `payment-${user.id}-${Date.now()}-${safeName}`;
+        const destination = path.join(paymentProofDir, filename);
+        fs.renameSync(req.file.path, destination);
+
+        if (user.paymentProofImage) {
+            const oldFileName = path.basename(user.paymentProofImage);
+            const oldPath = path.join(paymentProofDir, oldFileName);
+            if (fs.existsSync(oldPath)) {
+                fs.unlinkSync(oldPath);
+            }
+        }
+
+        user.paymentProofImage = `/uploads/payment-proofs/${filename}`;
+        user.paymentStatus = 'submitted';
+        user.paymentProofSubmittedAt = new Date();
+        await user.save();
+
+        return res.json({
+            message: 'Payment proof submitted successfully',
+            paymentStatus: user.paymentStatus,
+            paymentProofImage: user.paymentProofImage
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getPaymentParticipants = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            where: {
+                role: 'participant'
+            },
+            attributes: [
+                'id',
+                'uuid',
+                'name',
+                'email',
+                'college',
+                'phone',
+                'participantType',
+                'paymentStatus',
+                'paymentProofImage',
+                'paymentProofSubmittedAt',
+                'paymentDecisionAt',
+                'status'
+            ],
+            order: [['paymentProofSubmittedAt', 'DESC'], ['createdAt', 'DESC']]
+        });
+
+        const normalizedEmail = (value) => String(value || '').trim().toLowerCase();
+        const dedupedByEmail = new Map();
+
+        for (const user of users) {
+            const emailKey = normalizedEmail(user.email) || `id:${user.id}`;
+            if (!dedupedByEmail.has(emailKey)) {
+                dedupedByEmail.set(emailKey, user.toJSON());
+            }
+        }
+
+        return res.json(Array.from(dedupedByEmail.values()));
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+exports.reviewPayment = async (req, res) => {
+    try {
+        const userId = Number(req.params.id);
+        const { decision } = req.body;
+
+        if (!['approved', 'rejected'].includes(decision)) {
+            return res.status(400).json({ message: 'Invalid payment decision' });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user || user.role !== 'participant' || user.participantType !== 'external') {
+            return res.status(404).json({ message: 'External participant not found' });
+        }
+
+        if (!user.paymentProofImage) {
+            return res.status(400).json({ message: 'No payment proof submitted for this participant' });
+        }
+
+        user.paymentStatus = decision;
+        user.paymentDecisionAt = new Date();
+        user.status = decision === 'approved' ? 'active' : 'disqualified';
+        await user.save();
+
+        const appBase = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const decisionData = buildPaymentDecisionContent({ name: user.name, approved: decision === 'approved' });
+        await sendEmail({
+            email: user.email,
+            subject: decision === 'approved' ? 'Payment Confirmed - Muthamizh Sangamam 2026' : 'Payment Rejected - Muthamizh Sangamam 2026',
+            html: buildMailShell({ appBase, title: decisionData.title, subtitle: '', content: decisionData.content })
+        });
+
+        return res.json({
+            message: decision === 'approved' ? 'Payment approved successfully' : 'Payment rejected and user disqualified',
+            user: {
+                id: user.id,
+                paymentStatus: user.paymentStatus,
+                status: user.status,
+                paymentDecisionAt: user.paymentDecisionAt
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 };

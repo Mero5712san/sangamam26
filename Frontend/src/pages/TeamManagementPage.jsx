@@ -44,6 +44,9 @@ export function TeamManagementPage() {
                     eventName: eventData.name,
                     eventId: eventData.id,
                     teamName: userReg.teamDetails.name || 'Unnamed Team',
+                    leaderName: userReg.teamDetails.leaderName || userReg.teamDetails.leader || user?.name || 'Team Leader',
+                    leaderEmail: userReg.teamDetails.leader || user?.email || '',
+                    leaderCollege: userReg.teamDetails.leaderCollege || user?.college || 'My College',
                     requiredSize: eventData.maxTeamSize || 4,
                     members: userReg.teamDetails.members || []
                 };
@@ -81,18 +84,22 @@ export function TeamManagementPage() {
         }
     };
 
-    const handleRemoveMember = (email) => {
+    const handleRemoveMember = async (email) => {
         if (!teamData) return;
-        setTeamData({
-            ...teamData,
-            members: teamData.members.filter(m => m.email !== email)
-        });
-        showToast('Member removed from team', 'info');
+
+        try {
+            const { data } = await registrationAPI.removeTeamMember(teamData.eventId, { email });
+            const updatedMembers = Array.isArray(data?.teamDetails?.members) ? data.teamDetails.members : [];
+            setTeamData((prev) => prev ? { ...prev, teamName: data?.teamDetails?.name || prev.teamName, members: updatedMembers } : prev);
+            showToast('Member removed from team', 'info');
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to remove member', 'error');
+        }
     };
 
-    const handleAddMember = () => {
+    const handleAddMember = async () => {
         if (!newMember || !teamData) return;
-        if (teamData.members.some(m => m.email === newMember.value)) {
+        if (teamData.members.some((m) => String(m.email || '').trim().toLowerCase() === String(newMember.value || '').trim().toLowerCase())) {
             showToast('User already in team!', 'warning');
             return;
         }
@@ -103,20 +110,16 @@ export function TeamManagementPage() {
             return;
         }
 
-        setTeamData({
-            ...teamData,
-            members: [
-                ...teamData.members,
-                {
-                    email: newMember.value,
-                    name: newMember.label.split(' (')[0], // Extract name from "Name (email)" format
-                    status: 'pending'
-                }
-            ]
-        });
-        showToast(`Invitation sent to ${newMember.label}`, 'success');
-        setShowAddMember(false);
-        setNewMember(null);
+        try {
+            const { data } = await registrationAPI.addTeamMember(teamData.eventId, { email: newMember.value });
+            const updatedMembers = Array.isArray(data?.teamDetails?.members) ? data.teamDetails.members : [];
+            setTeamData((prev) => prev ? { ...prev, teamName: data?.teamDetails?.name || prev.teamName, members: updatedMembers } : prev);
+            showToast(`Invitation sent to ${newMember.label}`, 'success');
+            setShowAddMember(false);
+            setNewMember(null);
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to send invitation', 'error');
+        }
     };
 
     const getStatusIcon = (status) => {
@@ -233,18 +236,18 @@ export function TeamManagementPage() {
                                 <Shield size={28} />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-white">{user?.name || 'Team Leader'}</h3>
+                                <h3 className="text-lg font-bold text-white">{teamData.leaderName || 'Team Leader'}</h3>
                                 <p className="text-xs text-sangamam-gold font-bold uppercase tracking-widest">Team Lead</p>
                             </div>
                         </div>
                         <div className="space-y-3 pt-4 border-t border-sangamam-border">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">College</span>
-                                <span className="text-white font-medium">{user?.college || 'My College'}</span>
+                                <span className="text-white font-medium">{teamData.leaderCollege || 'My College'}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Email</span>
-                                <span className="text-white font-medium">{user?.email}</span>
+                                <span className="text-white font-medium">{teamData.leaderEmail || user?.email}</span>
                             </div>
                         </div>
                     </div>

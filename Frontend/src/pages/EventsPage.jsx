@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { SearchSelect } from '../components/SearchSelect';
 import { EventDetailModal } from '../components/EventDetailModal';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -17,11 +16,6 @@ export function EventsPage({ embedded = false }) {
     const [myEvents, setMyEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showTeamSelect, setShowTeamSelect] = useState(false);
-    const [selectedTeam, setSelectedTeam] = useState([]);
-    const [registeringEvent, setRegisteringEvent] = useState(null);
-    const [teamMemberOptions, setTeamMemberOptions] = useState([]);
-    const [isTeamMembersLoading, setIsTeamMembersLoading] = useState(false);
 
     const formatTimeRange = (event) => {
         if (!event?.time && !event?.endTime) return 'Time to be announced';
@@ -86,21 +80,8 @@ export function EventsPage({ embedded = false }) {
         navigate(`/event/${event.slug}`);
     };
 
-    const loadEligibleTeamMembers = async (event) => {
-        setIsTeamMembersLoading(true);
-        try {
-            const { data } = await registrationAPI.getEligibleMembers(event.id);
-            setTeamMemberOptions(Array.isArray(data) ? data : []);
-        } catch (error) {
-            setTeamMemberOptions([]);
-            showToast(error.response?.data?.message || 'Failed to load eligible team members', 'error');
-        } finally {
-            setIsTeamMembersLoading(false);
-        }
-    };
-
     // Add status: 'registered' | 'participating' | 'completed' to myEvents
-    const handleRegister = async (event, isTeamRequested = false) => {
+    const handleRegister = async (event, registrationData = {}) => {
         if (!user) {
             navigate('/login');
             return;
@@ -115,94 +96,47 @@ export function EventsPage({ embedded = false }) {
         }
 
         const participationMode = getParticipationMode(event);
-        const shouldRegisterAsTeam = participationMode === 'team' || (participationMode === 'both' && isTeamRequested);
-
-        if (shouldRegisterAsTeam) {
-            await loadEligibleTeamMembers(event);
-            setRegisteringEvent(event);
-            setShowTeamSelect(true);
-        } else {
-            try {
-                const { data } = await registrationAPI.register({
-                    eventId: event.id,
-                    type: 'individual'
-                });
-                setMyEvents((prev) => ([
-                    ...prev,
-                    {
-                        id: data?.event?.id || event.id,
-                        status: data?.status || 'registered',
-                        team: data?.teamDetails || null,
-                        date: event.date,
-                        time: event.time
-                    }
-                ]));
-                showToast(`Successfully registered for ${event.name}!`, 'success');
-                navigate(-1);
-            } catch (error) {
-                showToast(error.response?.data?.message || 'Registration failed', 'error');
-            }
-        }
-    };
-
-    // Demo: Mark attendance and complete event (in real app, this would be backend-driven)
-    const markAttendance = (eventId) => {
-        setMyEvents(myEvents.map(e => e.id === eventId ? { ...e, status: 'participating' } : e));
-    };
-    const markCompleted = (eventId) => {
-        setMyEvents(myEvents.map(e => e.id === eventId ? { ...e, status: 'completed' } : e));
-    };
-
-    const handleTeamSubmit = async () => {
-        if (!registeringEvent) return;
-
-        const minMembersToSelect = Math.max((registeringEvent.minTeamSize || 2) - 1, 1);
-        const maxMembersToSelect = Math.max((registeringEvent.maxTeamSize || 4) - 1, minMembersToSelect);
-
-        if (selectedTeam.length < minMembersToSelect || selectedTeam.length > maxMembersToSelect) {
-            showToast(`Select ${minMembersToSelect} to ${maxMembersToSelect} team members.`, 'error');
-            return;
-        }
-
-        const teamDetails = {
-            leader: user.email,
-            members: selectedTeam.map((member) => ({
-                email: member.value,
-                name: member.label,
-                status: 'pending'
-            }))
-        };
+        const isTeamRegistration = registrationData?.isTeam || participationMode === 'team';
 
         try {
-            const { data } = await registrationAPI.register({
-                eventId: registeringEvent.id,
-                type: 'team',
-                teamDetails
-            });
+            const payload = isTeamRegistration
+                ? {
+                    eventId: event.id,
+                    type: 'team',
+                    teamDetails: {
+                        name: registrationData.teamName || `${user.name || 'Team Lead'} Team`,
+                        leader: user.email,
+                        members: Array.isArray(registrationData.selectedMembers)
+                            ? registrationData.selectedMembers.map((member) => ({
+                                email: member.value,
+                                name: member.label,
+                                status: 'pending'
+                            }))
+                            : []
+                    }
+                }
+                : {
+                    eventId: event.id,
+                    type: 'individual'
+                };
 
+            const { data } = await registrationAPI.register(payload);
             setMyEvents((prev) => ([
                 ...prev,
                 {
-                    id: data?.event?.id || registeringEvent.id,
+                    id: data?.event?.id || event.id,
                     status: data?.status || 'registered',
-                    team: data?.teamDetails || teamDetails,
-                    date: registeringEvent.date,
-                    time: registeringEvent.time
+                    team: data?.teamDetails || null,
+                    date: event.date,
+                    time: event.time
                 }
             ]));
-
-            const eventSlug = registeringEvent.slug;
-            setShowTeamSelect(false);
-            setSelectedTeam([]);
-            setRegisteringEvent(null);
-            setTeamMemberOptions([]);
-            showToast('Successfully registered team! Invitations sent.', 'success');
-            navigate(`/event/${eventSlug}/team`);
+            showToast(`Successfully registered for ${event.name}!`, 'success');
+            navigate(-1);
         } catch (error) {
-            showToast(error.response?.data?.message || 'Team registration failed', 'error');
+            showToast(error.response?.data?.message || 'Registration failed', 'error');
         }
     };
-
 
     const content = (
         <div className="space-y-10">
@@ -269,74 +203,6 @@ export function EventsPage({ embedded = false }) {
                     onRegister={handleRegister}
                     myEvents={myEvents}
                 />
-            )}
-            {showTeamSelect && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                    <div className="sangamam-card max-w-xl w-full p-8 shadow-2xl border border-sangamam-border">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="h-12 w-12 rounded-xl bg-sangamam-gold/20 flex items-center justify-center text-sangamam-gold">
-                                <Users size={24} />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-bold text-white">Create Your Team</h2>
-                                <p className="text-sm text-gray-400">Event: {registeringEvent?.name}</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="p-4 bg-sangamam-gold/10 border border-sangamam-gold/20 rounded-lg">
-                                <p className="text-sm text-sangamam-gold leading-relaxed">
-                                    <span className="font-bold">Team Requirements:</span> For this event, you need a total of <span className="font-bold underline">{registeringEvent?.minTeamSize || 2} to {registeringEvent?.maxTeamSize || 4} members</span>.
-                                    As the team lead, you need to select <span className="font-bold">{Math.max((registeringEvent?.minTeamSize || 2) - 1, 1)} to {Math.max((registeringEvent?.maxTeamSize || 4) - 1, 1)} members</span> from <span className="underline">{user?.college || 'your college'}</span>.
-                                </p>
-                            </div>
-
-                            {/* Team Lead Info */}
-                            <div className="p-4 bg-white/5 border border-sangamam-border rounded-lg">
-                                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">Team Lead</p>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-full bg-sangamam-gold/20 flex items-center justify-center text-sangamam-gold font-bold">
-                                        {user?.name?.charAt(0) || 'U'}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-white">{user?.name}</p>
-                                        <p className="text-xs text-gray-500">{user?.email}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold mb-2 text-sangamam-gold">Select Members</label>
-                                <SearchSelect
-                                    options={teamMemberOptions}
-                                    multiple={true}
-                                    maxItems={Math.max((registeringEvent?.maxTeamSize || 4) - 1, 1)}
-                                    onChange={setSelectedTeam}
-                                    placeholder={isTeamMembersLoading ? 'Loading eligible members...' : 'Search by name or email...'}
-                                />
-                                <p className="mt-2 text-[11px] text-gray-500 italic">
-                                    * Showing only registered participants from {user?.college || 'your college'} who are not already in this event.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mt-8">
-                            <button
-                                className="px-6 py-3 rounded-xl border border-sangamam-border text-white font-bold hover:bg-white/5 transition-colors"
-                                onClick={() => { setShowTeamSelect(false); setSelectedTeam([]); setRegisteringEvent(null); setTeamMemberOptions([]); }}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="sangamam-button py-3 font-bold shadow-[0_0_20px_rgba(216,162,69,0.3)]"
-                                onClick={handleTeamSubmit}
-                                disabled={isTeamMembersLoading}
-                            >
-                                Register Team
-                            </button>
-                        </div>
-                    </div>
-                </div>
             )}
         </div>
     );

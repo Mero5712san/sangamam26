@@ -10,10 +10,10 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
     const { role, user } = useAuthStore();
     const navigate = useNavigate();
     const [isRegisteringTeam, setIsRegisteringTeam] = useState(false);
+    const [showConfirmRegister, setShowConfirmRegister] = useState(false);
     const [teamName, setTeamName] = useState('');
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [regType, setRegType] = useState(null); // 'solo' or 'team'
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [eligibleMembers, setEligibleMembers] = useState([]);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
     const participationMode = event?.participationType || event?.registrationType || 'solo';
@@ -34,6 +34,24 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
     const sameSlotCount = sameSlotEvents.length;
     const isSlotFull = sameSlotCount >= 2;
     const eventTimeRange = event?.time && event?.endTime ? `${event.time}-${event.endTime}` : (event?.time || event?.endTime || 'Time to be announced');
+    const minTeamMembersToSelect = Math.max((event?.minTeamSize || 2) - 1, 1);
+    const maxTeamMembersToSelect = Math.max((event?.maxTeamSize || 4) - 1, minTeamMembersToSelect);
+    const isTeamMode = participationMode === 'team' || regType === 'team';
+    const canSubmitTeam = isTeamMode
+        ? selectedMembers.length >= minTeamMembersToSelect && selectedMembers.length <= maxTeamMembersToSelect && !isLoadingMembers
+        : true;
+
+    const buildRegistrationPayload = () => {
+        if (isTeamMode) {
+            return {
+                isTeam: true,
+                teamName: teamName.trim() || `${user?.name || 'Team Lead'} Team`,
+                selectedMembers
+            };
+        }
+
+        return { isTeam: false };
+    };
 
     useEffect(() => {
         const loadEligibleMembers = async () => {
@@ -57,24 +75,18 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
         if (isSlotFull) {
             return;
         }
-        setShowConfirmModal(true);
+
+        setShowConfirmRegister(true);
     };
 
-    const hasClash = sameSlotCount > 0;
+    const handleConfirmRegister = () => {
+        if (isSlotFull) {
+            setShowConfirmRegister(false);
+            return;
+        }
 
-    const confirmRegistration = () => {
-        setShowConfirmModal(false);
-        onRegister(event, isRegisteringTeam);
-    };
-
-    const handleAddTeamMember = () => {
-        setTeamMembers([...teamMembers, '']);
-    };
-
-    const handleTeamMemberChange = (index, value) => {
-        const updated = [...teamMembers];
-        updated[index] = value;
-        setTeamMembers(updated);
+        onRegister(event, buildRegistrationPayload());
+        setShowConfirmRegister(false);
     };
 
     // Find event status if in myEvents
@@ -103,6 +115,37 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         {/* Left: Event Poster */}
                         <div>
+
+                            {showConfirmRegister && (
+                                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                                    <div className="bg-[#2a130d] border border-sangamam-border w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center">
+                                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sangamam-gold/10 text-sangamam-gold">
+                                            <Users size={32} />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white mb-2">
+                                            Confirm Registration
+                                        </h3>
+                                        <p className="text-gray-400 text-sm mb-6">
+                                            Are you sure you want to register for <span className="text-sangamam-gold font-bold">{event.name}</span>?
+                                            {isTeamMode ? ' This will register your selected team members too.' : ''}
+                                        </p>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => setShowConfirmRegister(false)}
+                                                className="flex-1 py-3 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleConfirmRegister}
+                                                className="flex-1 py-3 rounded-xl bg-sangamam-gold text-[#2a130d] font-bold transition-all shadow-lg hover:bg-sangamam-gold/90"
+                                            >
+                                                Confirm
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div className="bg-[rgba(255,255,255,0.04)] h-auto rounded-2xl flex items-center justify-center border border-sangamam-border">
                                 {event.image ? (
                                     <img
@@ -292,12 +335,12 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                                                     {/* Team Registration Form */}                                                 {(participationMode === 'team' || regType === 'team') && (
                                                         <div className="space-y-4 animate-in fade-in duration-300">
                                                             <div className="space-y-2">
-                                                                <label className="text-xs font-bold text-sangamam-gold uppercase">Team Name</label>
+                                                                <label className="text-xs font-bold text-sangamam-gold uppercase">Team Name <span className="text-gray-500 normal-case">(optional)</span></label>
                                                                 <input
                                                                     type="text"
                                                                     value={teamName}
                                                                     onChange={(e) => setTeamName(e.target.value)}
-                                                                    placeholder="Enter your team name"
+                                                                    placeholder="Enter your team name (optional)"
                                                                     className="sangamam-input w-full px-4 py-3 text-sm"
                                                                 />
                                                             </div>
@@ -345,13 +388,17 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                                                         )}
                                                         <button
                                                             onClick={handleRegisterClick}
-                                                            disabled={isSlotFull}
+                                                            disabled={isSlotFull || !canSubmitTeam || (isTeamMode && selectedMembers.length < minTeamMembersToSelect)}
                                                             className={`flex-1 py-3 font-bold rounded-xl transition-all ${isSlotFull
                                                                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-white/5'
                                                                 : 'sangamam-button'
                                                                 }`}
                                                         >
-                                                            {isSlotFull ? `Max Events Reached (${sameSlotCount}/2 at this time)` : (regType === 'team' || participationMode === 'team' ? 'Register Team' : 'Register Now')}
+                                                            {isSlotFull
+                                                                ? `Max Events Reached (${sameSlotCount}/2 at this time)`
+                                                                : (isTeamMode
+                                                                    ? `Register Team${selectedMembers.length < minTeamMembersToSelect ? ` (${selectedMembers.length}/${minTeamMembersToSelect})` : ''}`
+                                                                    : 'Register Now')}
                                                         </button>
                                                     </div>
                                                 </>
@@ -380,51 +427,6 @@ export function EventDetailModal({ event, onClose, onRegister, myEvents = [] }) 
                 </div>
             </div>
 
-            {/* Confirmation Modal */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#2a130d] border border-sangamam-border w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
-                        <div className="mx-auto w-16 h-16 bg-sangamam-gold/10 rounded-full flex items-center justify-center mb-4">
-                            <Clock className="text-sangamam-gold" size={32} />
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-2">
-                            {isSlotFull ? 'Schedule Limit Reached!' : hasClash ? 'Shared Time Slot' : 'Confirm Registration'}
-                        </h3>
-                        <p className="text-gray-400 text-sm mb-6">
-                            {isSlotFull ? (
-                                <>
-                                    You already have <span className="text-sangamam-gold font-bold">2 events</span> scheduled at <span className="text-sangamam-gold font-bold">{event.time}</span> on <span className="text-sangamam-gold font-bold">{event.date}</span>.
-                                    <span className="block mt-2 text-white font-semibold italic">You can register for at most 2 events in the same time slot.</span>
-                                </>
-                            ) : hasClash ? (
-                                <>
-                                    You already have <span className="text-sangamam-gold font-bold">{sameSlotCount} event{sameSlotCount > 1 ? 's' : ''}</span> scheduled at <span className="text-sangamam-gold font-bold">{event.time}</span> on <span className="text-sangamam-gold font-bold">{event.date}</span>.
-                                    <span className="block mt-2 text-white font-semibold italic">You can still register for one more event at this same time.</span>
-                                </>
-                            ) : (
-                                <>
-                                    Are you sure you want to register for <span className="text-sangamam-gold font-bold">{event.name}</span>?
-                                    This action will be shared with the event coordinators.
-                                </>
-                            )}
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowConfirmModal(false)}
-                                className="flex-1 py-3 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={isSlotFull ? () => setShowConfirmModal(false) : confirmRegistration}
-                                className="flex-1 py-3 rounded-xl bg-sangamam-gold text-white font-bold hover:bg-sangamam-maroon transition-all shadow-lg"
-                            >
-                                {isSlotFull ? 'Close' : hasClash ? 'Register Anyway' : 'Confirm'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

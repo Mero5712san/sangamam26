@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { registerEvent, getMyRegistrations, markAttendance, getEventRegistrations, getUserRegistrations, getEligibleTeamMembers, getAssignedRegistrations, getAllRegistrations } = require('../controllers/registrationController');
+const { registerEvent, addTeamMember, removeTeamMember, getMyRegistrations, getMyTeamInvitations, respondToTeamInvitation, markAttendance, getEventRegistrations, getUserRegistrations, getEligibleTeamMembers, getAssignedRegistrations, getAllRegistrations } = require('../controllers/registrationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.post('/', protect, registerEvent);
+router.post('/team/:eventId/member', protect, addTeamMember);
+router.patch('/team/:eventId/member', protect, removeTeamMember);
+router.get('/invitations', protect, getMyTeamInvitations);
+router.patch('/invitations/:id', protect, respondToTeamInvitation);
 router.get('/my', protect, getMyRegistrations);
 router.get('/all', protect, authorize('admin'), getAllRegistrations);
 router.get('/assigned', protect, getAssignedRegistrations);

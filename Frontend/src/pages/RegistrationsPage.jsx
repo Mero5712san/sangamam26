@@ -55,8 +55,12 @@ export function RegistrationsPage() {
                 }));
                 setAssignedEvents(events);
             } else {
-                const { data } = await registrationAPI.getMy();
-                setRegistrations(data);
+                const [{ data: registrationsData }, { data: invitationsData }] = await Promise.all([
+                    registrationAPI.getMy(),
+                    registrationAPI.getInvitations()
+                ]);
+                setRegistrations(Array.isArray(registrationsData) ? registrationsData : []);
+                setInvitations(Array.isArray(invitationsData) ? invitationsData : []);
             }
         } catch (error) {
             showToast('Failed to load events', 'error');
@@ -71,12 +75,12 @@ export function RegistrationsPage() {
 
     const processAction = async () => {
         try {
-            // Implementation for accept/reject
-            // await registrationAPI.handleInvitation(confirmAction.invite.id, confirmAction.type);
-            setInvitations(invitations.filter(i => i.id !== confirmAction.invite.id));
+            const decision = confirmAction.type === 'accept' ? 'accept' : 'reject';
+            await registrationAPI.respondToInvitation(confirmAction.invite.id, decision);
+            await fetchPageData();
             showToast(`Invitation ${confirmAction.type}ed successfully`, 'success');
         } catch (error) {
-            showToast('Failed to process invitation', 'error');
+            showToast(error.response?.data?.message || 'Failed to process invitation', 'error');
         }
         setConfirmAction(null);
     };
@@ -119,14 +123,14 @@ export function RegistrationsPage() {
             </div>
 
             {/* Invitations Banner */}
-            {invitations.length > 0 && invitations.map(invite => (
+            {role !== 'incharge' && invitations.length > 0 && invitations.map(invite => (
                 <div key={invite.id} className="bg-[#fff9eb] border border-[#ffeeba] rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm animate-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center gap-3">
                         <div className="bg-[#ffc107]/20 p-2 rounded-full">
                             <AlertTriangle className="text-[#856404]" size={20} />
                         </div>
                         <p className="text-[#856404] text-sm font-medium leading-relaxed">
-                            <span className="font-bold">{invite.inviter}</span> has invited you to join team <span className="font-bold">"{invite.teamName}"</span> for <span className="font-bold">{invite.eventName}</span>.
+                            <span className="font-bold">{invite.inviterName}</span> has invited you to join team <span className="font-bold">"{invite.teamName}"</span> for <span className="font-bold">{invite.eventName}</span>.
                             Accept now to participate!
                         </p>
                     </div>

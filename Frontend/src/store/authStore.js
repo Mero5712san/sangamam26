@@ -8,13 +8,14 @@ export const useAuthStore = create(
             user: null,
             role: null,
             token: null,
+            blockedAccess: null,
 
             setUser: (user) =>
-                set({ user, role: user?.role, token: user?.token }),
+                set({ user, role: user?.role, token: user?.token, blockedAccess: null }),
 
             login: async (credentials) => {
                 const { data } = await authAPI.login(credentials);
-                set({ user: data, role: data.role, token: data.token });
+                set({ user: data, role: data.role, token: data.token, blockedAccess: null });
                 return data;
             },
 
@@ -34,14 +35,14 @@ export const useAuthStore = create(
                     return data;
                 } catch (error) {
                     // Clear invalid token on auth failure
-                    set({ user: null, role: null, token: null });
+                    set({ user: null, role: null, token: null, blockedAccess: null });
                     throw error;
                 }
             },
 
             register: async (userData) => {
                 const { data } = await authAPI.register(userData);
-                set({ user: data, role: data.role, token: data.token });
+                set({ user: data, role: data.role, token: data.token, blockedAccess: null });
                 return data;
             },
 
@@ -65,7 +66,10 @@ export const useAuthStore = create(
             },
 
             logout: () =>
-                set({ user: null, role: null, token: null }),
+                set({ user: null, role: null, token: null, blockedAccess: null }),
+
+            setBlockedAccess: (blockedAccess) =>
+                set({ blockedAccess }),
         }),
         {
             name: 'auth-storage',

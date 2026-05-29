@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { VirtualIDCard } from './VirtualIDCard';
@@ -8,9 +9,27 @@ export function AppShell({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [idCardOpen, setIdCardOpen] = useState(false);
     const { user } = useAuthStore();
+    const navigate = useNavigate();
+    const showPaymentWarning = user?.role === 'participant' && user?.participantType === 'external' && user?.paymentStatus === 'pending';
     return (
         <div className="min-h-screen bg-transparent text-sangamam-text">
             <Topbar onBurgerClick={() => setSidebarOpen(true)} onProfileClick={() => setIdCardOpen(true)} />
+            {showPaymentWarning && (
+                <div className="border-b border-amber-500/30 bg-gradient-to-r from-amber-500/20 via-red-500/15 to-amber-500/20 px-4 py-3 lg:ml-72">
+                    <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-amber-500/25 bg-[#2a130d]/70 px-4 py-3 backdrop-blur-md md:grid-cols-[1fr_auto] md:items-center">
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-extrabold text-amber-300">Payment pending</p>
+                            <p className="text-xs text-amber-100/80">Your registration is complete, but payment proof is still required to confirm access.</p>
+                        </div>
+                        <button
+                            onClick={() => navigate('/payment-confirmation')}
+                            className="w-full justify-self-start rounded-xl bg-sangamam-gold px-4 py-2 text-sm font-bold text-[#2a130d] shadow-lg transition-transform hover:scale-[1.02] md:w-auto md:justify-self-end"
+                        >
+                            Pay now
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-50 flex bg-[#120705]/80 backdrop-blur-sm">

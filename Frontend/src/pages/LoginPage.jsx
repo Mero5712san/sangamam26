@@ -51,7 +51,7 @@ export function LoginPage() {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('participant');
     const [isSignUp, setIsSignUp] = useState(false);
-    
+
     // Signup Fields
     const [nameEnglish, setNameEnglish] = useState('');
     const [nameTamil, setNameTamil] = useState('');
@@ -62,7 +62,7 @@ export function LoginPage() {
     const [gender, setGender] = useState('');
     const [place, setPlace] = useState('');
     const [yearOfStudy, setYearOfStudy] = useState('');
-    
+
     // Payment Step
     const [signupStep, setSignupStep] = useState(1); // 1: Personal, 2: Payment
     const [paymentMethod, setPaymentMethod] = useState('UPI');
@@ -105,7 +105,7 @@ export function LoginPage() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         if (isSignUp) {
             if (!isEmailVerified) {
                 showToast('Please verify your email with OTP first', 'warning');
@@ -152,7 +152,7 @@ export function LoginPage() {
                     showToast('Please upload payment proof screenshot', 'warning');
                     return;
                 }
-                handleFinishSignup(false); 
+                handleFinishSignup(false);
             }
         } else {
             // Sign In Logic
@@ -166,7 +166,7 @@ export function LoginPage() {
 
     const handleFinishSignup = async (isInternal = false) => {
         const collegeLabel = college?.label || 'Unknown College';
-        
+
         const userData = {
             name: nameEnglish,
             email,
@@ -183,9 +183,9 @@ export function LoginPage() {
         try {
             await useAuthStore.getState().register(userData);
             showToast(
-                isInternal 
-                ? 'BIT Student detected. Internal participation access granted!' 
-                : 'Registration successful! Welcome to Sangamam.', 
+                isInternal
+                    ? 'BIT Student detected. Internal participation access granted!'
+                    : 'Registration successful! Welcome to Sangamam.',
                 'success'
             );
             navigate('/events');
@@ -223,8 +223,8 @@ export function LoginPage() {
                             {isSignUp ? (signupStep === 1 ? 'Create Account' : 'Payment Verification') : 'Welcome Back'}
                         </h2>
                         <p className="text-gray-500 text-center text-sm">
-                            {isSignUp 
-                                ? (signupStep === 1 ? 'Join the Sangamam community' : 'Complete your registration with payment') 
+                            {isSignUp
+                                ? (signupStep === 1 ? 'Join the Sangamam community' : 'Complete your registration with payment')
                                 : 'Sign in to your account'}
                         </p>
                     </div>
@@ -233,360 +233,360 @@ export function LoginPage() {
                         {isSignUp ? (
                             signupStep === 1 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {/* Name in English */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Name in English</label>
-                                    <div className="relative">
-                                        <User size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={nameEnglish}
-                                            onChange={(e) => setNameEnglish(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="Your name"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Name in Tamil */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">பெயர் (தமிழில்)</label>
-                                    <div className="relative">
-                                        <Languages size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={nameTamil}
-                                            onChange={(e) => setNameTamil(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 font-tamil text-sm"
-                                            placeholder="உங்கள் பெயர்"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Email with Verification */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Email</label>
-                                    <div className="flex gap-2">
-                                        <div className="relative flex-1">
-                                            <Mail size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                    {/* Name in English */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Name in English</label>
+                                        <div className="relative">
+                                            <User size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
                                             <input
-                                                type="email"
-                                                value={email}
-                                                onChange={(e) => {
-                                                    setEmail(e.target.value);
-                                                    setIsEmailVerified(false);
-                                                }}
-                                                className={`sangamam-input w-full pl-9 pr-4 py-1.5 text-sm ${isEmailVerified ? 'border-green-500/50' : ''}`}
-                                                placeholder="your@email.com"
+                                                type="text"
+                                                value={nameEnglish}
+                                                onChange={(e) => setNameEnglish(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="Your name"
                                                 required
-                                                disabled={isEmailVerified}
                                             />
-                                            {isEmailVerified && (
-                                                <CheckCircle size={14} className="absolute right-3 top-2.5 text-green-500" />
-                                            )}
                                         </div>
-                                        {!isEmailVerified && !showOtpInput && (
-                                            <button 
-                                                type="button"
-                                                onClick={handleSendOtp}
-                                                disabled={isSendingOtp}
-                                                className="px-3 py-1.5 bg-sangamam-gold text-[#2a130d] text-xs font-bold rounded-lg hover:bg-sangamam-gold/80 transition-colors flex items-center gap-1"
-                                            >
-                                                {isSendingOtp ? 'Sending...' : 'Verify'}
-                                            </button>
-                                        )}
                                     </div>
-                                </div>
 
-                                {/* OTP Input */}
-                                {showOtpInput && !isEmailVerified && (
-                                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Enter 6-Digit OTP</label>
+                                    {/* Name in Tamil */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">பெயர் (தமிழில்)</label>
+                                        <div className="relative">
+                                            <Languages size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="text"
+                                                value={nameTamil}
+                                                onChange={(e) => setNameTamil(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 font-tamil text-sm"
+                                                placeholder="உங்கள் பெயர்"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Email with Verification */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Email</label>
                                         <div className="flex gap-2">
                                             <div className="relative flex-1">
-                                                <ShieldCheck size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                                <Mail size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
                                                 <input
-                                                    type="text"
-                                                    maxLength={6}
-                                                    value={otp}
-                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                    className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm tracking-[0.5em] font-mono"
-                                                    placeholder="000000"
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={(e) => {
+                                                        setEmail(e.target.value);
+                                                        setIsEmailVerified(false);
+                                                    }}
+                                                    className={`sangamam-input w-full pl-9 pr-4 py-1.5 text-sm ${isEmailVerified ? 'border-green-500/50' : ''}`}
+                                                    placeholder="your@email.com"
+                                                    required
+                                                    disabled={isEmailVerified}
                                                 />
+                                                {isEmailVerified && (
+                                                    <CheckCircle size={14} className="absolute right-3 top-2.5 text-green-500" />
+                                                )}
                                             </div>
-                                            <button 
-                                                type="button"
-                                                onClick={handleVerifyOtp}
-                                                className="px-4 py-1.5 bg-sangamam-gold text-[#2a130d] text-xs font-bold rounded-lg hover:bg-sangamam-gold/80 transition-colors"
-                                            >
-                                                Verify Code
-                                            </button>
-                                        </div>
-                                        <p className="text-[10px] text-gray-500 mt-1">Check your inbox for the verification code.</p>
-                                    </div>
-                                )}
-
-                                {/* Phone */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Phone Number</label>
-                                    <div className="relative">
-                                        <Phone size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="tel"
-                                            pattern="[0-9]{10}"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="10 digit number"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Roll Number */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Roll Number</label>
-                                    <div className="relative">
-                                        <Hash size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={rollNo}
-                                            onChange={(e) => setRollNo(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="Roll No"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Place */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Place</label>
-                                    <div className="relative">
-                                        <MapPin size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={place}
-                                            onChange={(e) => setPlace(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="Your place"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* College & Department */}
-                                <div className="lg:col-span-2">
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">College Name</label>
-                                    <div className="relative">
-                                        <School size={16} className="absolute left-3 top-2.5 text-sangamam-gold z-10" />
-                                        <div className="pl-9">
-                                            <SearchSelect 
-                                                options={COLLEGES} 
-                                                multiple={false} 
-                                                onChange={setCollege} 
-                                                placeholder="Search and select college" 
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Department</label>
-                                    <div className="relative">
-                                        <GraduationCap size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={department}
-                                            onChange={(e) => setDepartment(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="e.g. CSE, IT"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Gender */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Gender</label>
-                                    <div className="flex gap-4 p-2 bg-[rgba(255,255,255,0.02)] rounded-lg  border-sangamam-border h-[38px] items-center">
-                                        {['Male', 'Female', 'Other'].map((g) => (
-                                            <label key={g} className="flex items-center gap-1.5 cursor-pointer text-sangamam-gold text-xs">
-                                                <input
-                                                    type="radio"
-                                                    name="gender"
-                                                    value={g}
-                                                    checked={gender === g}
-                                                    onChange={(e) => setGender(e.target.value)}
-                                                    className="accent-sangamam-gold h-3 w-3"
-                                                />
-                                                {g}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Year of Study */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Year of Study</label>
-                                    <div className="flex flex-wrap gap-2.5 p-2 bg-[rgba(255,255,255,0.02)] rounded-lg  border-sangamam-border h-[38px] items-center">
-                                        {['I', 'II', 'III', 'IV'].map((y) => (
-                                            <label key={y} className="flex items-center gap-1 cursor-pointer text-sangamam-gold text-xs">
-                                                <input
-                                                    type="radio"
-                                                    name="yearOfStudy"
-                                                    value={y}
-                                                    checked={yearOfStudy === y}
-                                                    onChange={(e) => setYearOfStudy(e.target.value)}
-                                                    className="accent-sangamam-gold h-3 w-3"
-                                                />
-                                                {y}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Password */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Password</label>
-                                    <div className="relative">
-                                        <Lock size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
-                                        <input
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
-                                            placeholder="••••••••"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                                <div className="space-y-6 max-w-xl mx-auto">
-                                {/* Receiver Payment Details */}
-                                <div className="bg-sangamam-gold/10 border border-sangamam-gold/20 rounded-2xl p-5 space-y-4">
-                                    <h4 className="text-sm font-bold text-sangamam-gold uppercase tracking-wider flex items-center gap-2">
-                                        <CreditCard size={16} /> Receiver Payment Details
-                                    </h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold">UPI ID (Scan & Pay)</p>
-                                            <p className="text-white font-mono text-sm bg-black/30 p-2 rounded border border-white/5 select-all">sangamam@okaxis</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold">Account Holder</p>
-                                            <p className="text-white font-semibold text-sm">BIT Sangamam 2024</p>
-                                        </div>
-                                        <div className="space-y-1 sm:col-span-2">
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold">Bank Details</p>
-                                            <div className="bg-black/30 p-2 rounded border border-white/5 text-xs text-gray-300 space-y-1">
-                                                <p><span className="text-sangamam-gold">Bank:</span> Axis Bank, Sathyamangalam</p>
-                                                <p><span className="text-sangamam-gold">Account No:</span> 923010001234567</p>
-                                                <p><span className="text-sangamam-gold">IFSC:</span> UTIB0001234</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Payment Method Selection */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-3 text-sangamam-gold">Payment Method</label>
-                                    <div className="flex gap-6">
-                                        {['UPI', 'Bank Transfer'].map((method) => (
-                                            <label key={method} className="flex items-center gap-3 cursor-pointer group">
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method ? 'border-sangamam-gold bg-sangamam-gold/20' : 'border-gray-600'}`}>
-                                                    {paymentMethod === method && <div className="w-2.5 h-2.5 rounded-full bg-sangamam-gold" />}
-                                                </div>
-                                                <input
-                                                    type="radio"
-                                                    name="paymentMethod"
-                                                    value={method}
-                                                    checked={paymentMethod === method}
-                                                    onChange={(e) => setPaymentMethod(e.target.value)}
-                                                    className="hidden"
-                                                />
-                                                <span className={`text-sm ${paymentMethod === method ? 'text-sangamam-gold font-bold' : 'text-gray-400'}`}>
-                                                    {method === 'UPI' ? <Wallet size={16} className="inline mr-2" /> : <CreditCard size={16} className="inline mr-2" />}
-                                                    {method}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* UPI ID / Account Number */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2 text-sangamam-gold">
-                                        {paymentMethod === 'UPI' ? 'UPI ID Used for Payment' : 'Account Number Used for Payment'}
-                                    </label>
-                                    <div className="relative">
-                                        <Hash size={16} className="absolute left-3 top-3 text-sangamam-gold" />
-                                        <input
-                                            type="text"
-                                            value={paymentId}
-                                            onChange={(e) => setPaymentId(e.target.value)}
-                                            className="sangamam-input w-full pl-10 pr-4 py-2 text-sm"
-                                            placeholder={paymentMethod === 'UPI' ? 'username@upi' : 'Enter account number'}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Image Upload */}
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2 text-sangamam-gold">Payment Proof (Screenshot)</label>
-                                    <div className="relative">
-                                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-sangamam-border rounded-lg cursor-pointer bg-black/20 hover:bg-black/30 transition-all group">
-                                            {paymentProof ? (
-                                                <div className="flex flex-col items-center text-sangamam-gold">
-                                                    <Camera size={24} className="mb-2" />
-                                                    <span className="text-xs">{paymentProof.name}</span>
-                                                    <button 
-                                                        type="button"
-                                                        onClick={(e) => { e.preventDefault(); setPaymentProof(null); }}
-                                                        className="mt-2 text-[10px] underline text-red-400"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center text-gray-500 group-hover:text-sangamam-gold">
-                                                    <Camera size={24} className="mb-2" />
-                                                    <span className="text-sm font-medium">Click to upload screenshot</span>
-                                                    <span className="text-[10px] mt-1">PNG, JPG or JPEG</span>
-                                                </div>
+                                            {!isEmailVerified && !showOtpInput && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendOtp}
+                                                    disabled={isSendingOtp}
+                                                    className="px-3 py-1.5 bg-sangamam-gold text-[#2a130d] text-xs font-bold rounded-lg hover:bg-sangamam-gold/80 transition-colors flex items-center gap-1"
+                                                >
+                                                    {isSendingOtp ? 'Sending...' : 'Verify'}
+                                                </button>
                                             )}
-                                            <input 
-                                                type="file" 
-                                                className="hidden" 
-                                                accept="image/*"
-                                                onChange={(e) => setPaymentProof(e.target.files[0])}
+                                        </div>
+                                    </div>
+
+                                    {/* OTP Input */}
+                                    {showOtpInput && !isEmailVerified && (
+                                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Enter 6-Digit OTP</label>
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <ShieldCheck size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                                    <input
+                                                        type="text"
+                                                        maxLength={6}
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                        className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm tracking-[0.5em] font-mono"
+                                                        placeholder="000000"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleVerifyOtp}
+                                                    className="px-4 py-1.5 bg-sangamam-gold text-[#2a130d] text-xs font-bold rounded-lg hover:bg-sangamam-gold/80 transition-colors"
+                                                >
+                                                    Verify Code
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 mt-1">Check your inbox for the verification code.</p>
+                                        </div>
+                                    )}
+
+                                    {/* Phone */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Phone Number</label>
+                                        <div className="relative">
+                                            <Phone size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="tel"
+                                                pattern="[0-9]{10}"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="10 digit number"
+                                                required
                                             />
-                                        </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Roll Number */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Roll Number</label>
+                                        <div className="relative">
+                                            <Hash size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="text"
+                                                value={rollNo}
+                                                onChange={(e) => setRollNo(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="Roll No"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Place */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Place</label>
+                                        <div className="relative">
+                                            <MapPin size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="text"
+                                                value={place}
+                                                onChange={(e) => setPlace(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="Your place"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* College & Department */}
+                                    <div className="lg:col-span-2">
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">College Name</label>
+                                        <div className="relative">
+                                            <School size={16} className="absolute left-3 top-2.5 text-sangamam-gold z-10" />
+                                            <div className="pl-9">
+                                                <SearchSelect
+                                                    options={COLLEGES}
+                                                    multiple={false}
+                                                    onChange={setCollege}
+                                                    placeholder="Search and select college"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Department</label>
+                                        <div className="relative">
+                                            <GraduationCap size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="text"
+                                                value={department}
+                                                onChange={(e) => setDepartment(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="e.g. CSE, IT"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Gender */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Gender</label>
+                                        <div className="flex gap-4 p-2 bg-[rgba(255,255,255,0.02)] rounded-lg  border-sangamam-border h-[38px] items-center">
+                                            {['Male', 'Female', 'Other'].map((g) => (
+                                                <label key={g} className="flex items-center gap-1.5 cursor-pointer text-sangamam-gold text-xs">
+                                                    <input
+                                                        type="radio"
+                                                        name="gender"
+                                                        value={g}
+                                                        checked={gender === g}
+                                                        onChange={(e) => setGender(e.target.value)}
+                                                        className="accent-sangamam-gold h-3 w-3"
+                                                    />
+                                                    {g}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Year of Study */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Year of Study</label>
+                                        <div className="flex flex-wrap gap-2.5 p-2 bg-[rgba(255,255,255,0.02)] rounded-lg  border-sangamam-border h-[38px] items-center">
+                                            {['I', 'II', 'III', 'IV'].map((y) => (
+                                                <label key={y} className="flex items-center gap-1 cursor-pointer text-sangamam-gold text-xs">
+                                                    <input
+                                                        type="radio"
+                                                        name="yearOfStudy"
+                                                        value={y}
+                                                        checked={yearOfStudy === y}
+                                                        onChange={(e) => setYearOfStudy(e.target.value)}
+                                                        className="accent-sangamam-gold h-3 w-3"
+                                                    />
+                                                    {y}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Password */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1 text-sangamam-gold">Password</label>
+                                        <div className="relative">
+                                            <Lock size={16} className="absolute left-3 top-2.5 text-sangamam-gold" />
+                                            <input
+                                                type="password"
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                className="sangamam-input w-full pl-9 pr-4 py-1.5 text-sm"
+                                                placeholder="••••••••"
+                                                required
+                                            />
+                                        </div>
                                     </div>
                                 </div>
+                            ) : (
+                                <div className="space-y-6 max-w-xl mx-auto">
+                                    {/* Receiver Payment Details */}
+                                    <div className="bg-sangamam-gold/10 border border-sangamam-gold/20 rounded-2xl p-5 space-y-4">
+                                        <h4 className="text-sm font-bold text-sangamam-gold uppercase tracking-wider flex items-center gap-2">
+                                            <CreditCard size={16} /> Receiver Payment Details
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] text-gray-500 uppercase font-bold">UPI ID (Scan & Pay)</p>
+                                                <p className="text-white font-mono text-sm bg-black/30 p-2 rounded border border-white/5 select-all">sangamam@okaxis</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] text-gray-500 uppercase font-bold">Account Holder</p>
+                                                <p className="text-white font-semibold text-sm">BIT Sangamam 2024</p>
+                                            </div>
+                                            <div className="space-y-1 sm:col-span-2">
+                                                <p className="text-[10px] text-gray-500 uppercase font-bold">Bank Details</p>
+                                                <div className="bg-black/30 p-2 rounded border border-white/5 text-xs text-gray-300 space-y-1">
+                                                    <p><span className="text-sangamam-gold">Bank:</span> Axis Bank, Sathyamangalam</p>
+                                                    <p><span className="text-sangamam-gold">Account No:</span> 923010001234567</p>
+                                                    <p><span className="text-sangamam-gold">IFSC:</span> UTIB0001234</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                {/* Back Button */}
-                                <button 
-                                    type="button"
-                                    onClick={() => setSignupStep(1)}
-                                    className="flex items-center gap-2 text-xs text-gray-500 hover:text-sangamam-gold transition-colors"
-                                >
-                                    <ArrowLeft size={14} /> Back to Personal Details
-                                </button>
+                                    {/* Payment Method Selection */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-3 text-sangamam-gold">Payment Method</label>
+                                        <div className="flex gap-6">
+                                            {['UPI', 'Bank Transfer'].map((method) => (
+                                                <label key={method} className="flex items-center gap-3 cursor-pointer group">
+                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === method ? 'border-sangamam-gold bg-sangamam-gold/20' : 'border-gray-600'}`}>
+                                                        {paymentMethod === method && <div className="w-2.5 h-2.5 rounded-full bg-sangamam-gold" />}
+                                                    </div>
+                                                    <input
+                                                        type="radio"
+                                                        name="paymentMethod"
+                                                        value={method}
+                                                        checked={paymentMethod === method}
+                                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                                        className="hidden"
+                                                    />
+                                                    <span className={`text-sm ${paymentMethod === method ? 'text-sangamam-gold font-bold' : 'text-gray-400'}`}>
+                                                        {method === 'UPI' ? <Wallet size={16} className="inline mr-2" /> : <CreditCard size={16} className="inline mr-2" />}
+                                                        {method}
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                {/* Warning Message */}
-                                <div className="flex items-start gap-3 p-3 bg-red-900/20 border border-red-900/50 rounded-lg">
-                                    <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                                    <p className="text-[11px] text-red-300 leading-relaxed">
-                                        <span className="font-bold text-red-500 uppercase block mb-1">Security Warning:</span>
-                                        Duplicate or false payment proof detected will lead to an immediate and permanent block from the Sangamam portal. Access will be revoked for all future events.
-                                    </p>
+                                    {/* UPI ID / Account Number */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-2 text-sangamam-gold">
+                                            {paymentMethod === 'UPI' ? 'UPI ID Used for Payment' : 'Account Number Used for Payment'}
+                                        </label>
+                                        <div className="relative">
+                                            <Hash size={16} className="absolute left-3 top-3 text-sangamam-gold" />
+                                            <input
+                                                type="text"
+                                                value={paymentId}
+                                                onChange={(e) => setPaymentId(e.target.value)}
+                                                className="sangamam-input w-full pl-10 pr-4 py-2 text-sm"
+                                                placeholder={paymentMethod === 'UPI' ? 'username@upi' : 'Enter account number'}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Image Upload */}
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-2 text-sangamam-gold">Payment Proof (Screenshot)</label>
+                                        <div className="relative">
+                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-sangamam-border rounded-lg cursor-pointer bg-black/20 hover:bg-black/30 transition-all group">
+                                                {paymentProof ? (
+                                                    <div className="flex flex-col items-center text-sangamam-gold">
+                                                        <Camera size={24} className="mb-2" />
+                                                        <span className="text-xs">{paymentProof.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); setPaymentProof(null); }}
+                                                            className="mt-2 text-[10px] underline text-red-400"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center text-gray-500 group-hover:text-sangamam-gold">
+                                                        <Camera size={24} className="mb-2" />
+                                                        <span className="text-sm font-medium">Click to upload screenshot</span>
+                                                        <span className="text-[10px] mt-1">PNG, JPG or JPEG</span>
+                                                    </div>
+                                                )}
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={(e) => setPaymentProof(e.target.files[0])}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Back Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSignupStep(1)}
+                                        className="flex items-center gap-2 text-xs text-gray-500 hover:text-sangamam-gold transition-colors"
+                                    >
+                                        <ArrowLeft size={14} /> Back to Personal Details
+                                    </button>
+
+                                    {/* Warning Message */}
+                                    <div className="flex items-start gap-3 p-3 bg-red-900/20 border border-red-900/50 rounded-lg">
+                                        <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                                        <p className="text-[11px] text-red-300 leading-relaxed">
+                                            <span className="font-bold text-red-500 uppercase block mb-1">Security Warning:</span>
+                                            Duplicate or false payment proof detected will lead to an immediate and permanent block from the Sangamam portal. Access will be revoked for all future events.
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        )) : (
+                            )) : (
                             <div className="space-y-5">
                                 <div>
                                     <label className="block font-semibold mb-2 text-sangamam-gold">Email</label>
@@ -599,9 +599,9 @@ export function LoginPage() {
                                             className="sangamam-input w-full pl-10 pr-4 py-2"
                                             placeholder={
                                                 role === 'participant' ? 'your@email.com' :
-                                                role === 'admin' ? 'name@admin.sangamam.in' :
-                                                role === 'incharge' ? 'name@incharge.sangamam.in' :
-                                                'name@volunteer.sangamam.in'
+                                                    role === 'admin' ? 'name@admin.sangamam.in' :
+                                                        role === 'incharge' ? 'name@incharge.sangamam.in' :
+                                                            'name@volunteer.sangamam.in'
                                             }
                                             required
                                         />
@@ -644,8 +644,8 @@ export function LoginPage() {
                                 disabled={isSignUp && signupStep === 1 && !isEmailVerified}
                                 className={`w-full ${isSignUp ? 'lg:w-1/3' : ''} sangamam-button py-2 text-lg font-bold rounded shadow-lg disabled:opacity-50 disabled:cursor-not-allowed`}
                             >
-                                {isSignUp 
-                                    ? (college?.value === 'bit_sathy' && signupStep === 1 ? 'Finish Registration' : (signupStep === 1 ? 'Next Step' : 'Finish Registration')) 
+                                {isSignUp
+                                    ? (college?.value === 'bit_sathy' && signupStep === 1 ? 'Finish Registration' : (signupStep === 1 ? 'Next Step' : 'Finish Registration'))
                                     : 'Sign In'}
                             </button>
                         </div>

@@ -33,6 +33,26 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('participant', 'incharge', 'admin', 'volunteer'),
         defaultValue: 'participant'
     },
+    participantType: {
+        type: DataTypes.ENUM('internal', 'external'),
+        defaultValue: 'external'
+    },
+    paymentStatus: {
+        type: DataTypes.ENUM('not_required', 'pending', 'submitted', 'approved', 'rejected'),
+        defaultValue: 'not_required'
+    },
+    paymentProofImage: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    paymentProofSubmittedAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    paymentDecisionAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     assignedEventIds: {
         type: DataTypes.JSON,
         defaultValue: []

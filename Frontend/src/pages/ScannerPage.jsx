@@ -37,7 +37,7 @@ export function ScannerPage() {
                         showToast("Invalid QR Code format", "error");
                         return;
                     }
-                    
+
                     setScannedData({
                         id: parsedData.id,
                         name: parsedData.name,
@@ -48,7 +48,7 @@ export function ScannerPage() {
 
                     // Pause scanning
                     html5QrCode.pause();
-                    
+
                     // Redirect to user detail page after 1 second
                     setTimeout(() => {
                         if (isMounted) {
@@ -105,14 +105,14 @@ export function ScannerPage() {
             </style>
 
             <div className="mx-auto w-full max-w-sm rounded-[2rem] border border-sangamam-border bg-white p-8 shadow-2xl">
-                
+
                 {/* Modern Scanner Frame */}
                 <div className="relative mx-auto w-64 h-64 mb-8">
                     {/* The Camera Feed Box */}
                     <div className="absolute inset-0 bg-slate-900 rounded-3xl overflow-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] flex items-center justify-center">
                         {/* html5-qrcode injects a video element here */}
                         <div id="reader" className="w-full h-full relative z-10 [&>video]:object-cover [&>video]:h-full [&>video]:w-full rounded-3xl overflow-hidden"></div>
-                        
+
                         {/* Fallback icon if camera is taking time */}
                         {!scannedData && <ScanLine className="text-slate-600 opacity-40 absolute pointer-events-none z-0" size={64} />}
                     </div>

@@ -13,14 +13,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Serve static assets from the frontend public folder (logo, images)
-app.use('/public', express.static(path.join(__dirname, '..', 'Frontend', 'public')));
+// Serve static assets from the backend public folder (logo, images)
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 const sequelize = require('./config/db');
 require('./models/User');
 require('./models/Event');
 require('./models/OtpVerification');
 require('./models/Registration');
+require('./models/TeamInvitation');
 const Event = require('./models/Event');
 const User = require('./models/User');
 
@@ -119,6 +120,48 @@ const ensureEventEndTimeColumn = async () => {
     });
 };
 
+const ensureUserPaymentColumns = async () => {
+    const queryInterface = sequelize.getQueryInterface();
+    const tableDefinition = await queryInterface.describeTable('Users');
+
+    if (!tableDefinition.participantType) {
+        await queryInterface.addColumn('Users', 'participantType', {
+            type: DataTypes.ENUM('internal', 'external'),
+            allowNull: false,
+            defaultValue: 'external'
+        });
+    }
+
+    if (!tableDefinition.paymentStatus) {
+        await queryInterface.addColumn('Users', 'paymentStatus', {
+            type: DataTypes.ENUM('not_required', 'pending', 'submitted', 'approved', 'rejected'),
+            allowNull: false,
+            defaultValue: 'not_required'
+        });
+    }
+
+    if (!tableDefinition.paymentProofImage) {
+        await queryInterface.addColumn('Users', 'paymentProofImage', {
+            type: DataTypes.STRING,
+            allowNull: true
+        });
+    }
+
+    if (!tableDefinition.paymentProofSubmittedAt) {
+        await queryInterface.addColumn('Users', 'paymentProofSubmittedAt', {
+            type: DataTypes.DATE,
+            allowNull: true
+        });
+    }
+
+    if (!tableDefinition.paymentDecisionAt) {
+        await queryInterface.addColumn('Users', 'paymentDecisionAt', {
+            type: DataTypes.DATE,
+            allowNull: true
+        });
+    }
+};
+
 // DB Connection
 // Use plain sync so startup does not keep reworking existing MySQL indexes.
 sequelize.sync().then(() => {
@@ -126,9 +169,11 @@ sequelize.sync().then(() => {
 }).then(() => {
     return ensureEventEndTimeColumn();
 }).then(() => {
+    return ensureUserPaymentColumns();
+}).then(() => {
     return syncExistingEventAssignments();
 }).then(() => {
-    console.log('MySQL Database synced, event visibility/time columns ensured, and event assignments refreshed...');
+    console.log('MySQL Database synced, event/user columns ensured, and event assignments refreshed...');
 }).catch(err => {
     console.log('Database sync error:', err);
 });

@@ -1,12 +1,31 @@
 const Registration = require('../models/Registration');
 const Event = require('../models/Event');
 const User = require('../models/User');
+const TeamInvitation = require('../models/TeamInvitation');
 const QRCode = require('qrcode');
+const sendEmail = require('../utils/sendEmail');
+const buildMailShell = require('../utils/emailTemplate');
 
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
 const isStaffRole = (role) => ['admin', 'incharge', 'volunteer'].includes(role);
+
+const assertActiveAccount = (user) => {
+    if (!user || user.status === 'active') {
+        return null;
+    }
+
+    if (user.status === 'freezed') {
+        return 'Your account has been freezed. Contact the admin to regain access.';
+    }
+
+    if (user.status === 'disqualified') {
+        return 'Your account has been disqualified and cannot register for events.';
+    }
+
+    return 'Your account is not allowed to register for events.';
+};
 
 const countRegistrationsForSlot = (registrations, event) => registrations.filter((registration) => {
     const registrationEvent = registration.event;
@@ -43,10 +62,77 @@ const collectTakenEmailsForEvent = async (eventId) => {
     return taken;
 };
 
+const buildTeamInviteMail = ({ appBase, inviterName, teamName, eventName }) => {
+    return buildMailShell({
+        appBase,
+        title: 'Team Invitation',
+        subtitle: `You were added to ${teamName}`,
+        content: `
+            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello,</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0 0 16px 0;">
+                <strong>${inviterName}</strong> has added you to the team <strong>${teamName}</strong> for <strong>${eventName}</strong>.
+            </p>
+            <p style="font-size: 13px; color:#d6c7a3; margin:0;">
+                Open your Sangamam dashboard to view the registration details.
+            </p>
+        `
+    });
+};
+
+const buildInvitationAcceptedMail = ({ appBase, teamName, eventName }) => {
+    return buildMailShell({
+        appBase,
+        title: 'Invitation Accepted',
+        subtitle: `You joined ${teamName}`,
+        content: `
+            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello,</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0;">
+                Your invitation for <strong>${teamName}</strong> in <strong>${eventName}</strong> has been accepted.
+            </p>
+        `
+    });
+};
+
+const buildInvitationRejectedMail = ({ appBase, teamName, eventName }) => {
+    return buildMailShell({
+        appBase,
+        title: 'Invitation Declined',
+        subtitle: `Invite updated for ${teamName}`,
+        content: `
+            <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello,</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0;">
+                The team invitation for <strong>${teamName}</strong> in <strong>${eventName}</strong> was declined.
+            </p>
+        `
+    });
+};
+
+const buildTeamRegistrationPayload = async ({ user, event, teamDetails }) => {
+    const qrData = JSON.stringify({
+        id: user.uuid,
+        name: user.name,
+        eventId: event.id,
+        uuid: Math.random().toString(36).substring(2, 15)
+    });
+
+    return {
+        userId: user.id,
+        eventId: event.id,
+        type: 'team',
+        teamDetails,
+        qrCode: await QRCode.toDataURL(qrData)
+    };
+};
+
 exports.registerEvent = async (req, res) => {
     try {
         const { eventId, type, teamDetails } = req.body;
         const userId = req.user.id;
+
+        const blockedMessage = assertActiveAccount(req.user);
+        if (blockedMessage) {
+            return res.status(403).json({ message: blockedMessage });
+        }
 
         if (isStaffRole(req.user.role)) {
             return res.status(403).json({ message: 'Staff accounts cannot register for events' });
@@ -68,6 +154,8 @@ exports.registerEvent = async (req, res) => {
                 message: `You can register for only 2 events at ${event.time} on ${event.date}`
             });
         }
+
+        let teamDetailsToSave = teamDetails;
 
         if (type === 'team') {
             const members = Array.isArray(teamDetails?.members) ? teamDetails.members : [];
@@ -116,6 +204,15 @@ exports.registerEvent = async (req, res) => {
             if (alreadyTaken) {
                 return res.status(400).json({ message: `${alreadyTaken} is already participating in this event` });
             }
+
+            teamDetailsToSave = {
+                ...(teamDetails || {}),
+                name: teamDetails?.name || `${req.user.name || 'Team Lead'} Team`,
+                leader: req.user.email,
+                leaderName: req.user.name,
+                leaderCollege: req.user.college,
+                members
+            };
         }
 
         const qrData = JSON.stringify({
@@ -130,7 +227,7 @@ exports.registerEvent = async (req, res) => {
             userId,
             eventId,
             type,
-            teamDetails,
+            teamDetails: teamDetailsToSave,
             qrCode
         });
 
@@ -139,6 +236,386 @@ exports.registerEvent = async (req, res) => {
         res.status(201).json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+exports.addTeamMember = async (req, res) => {
+    try {
+        const eventId = Number(req.params.eventId);
+        const { email } = req.body;
+
+        const blockedMessage = assertActiveAccount(req.user);
+        if (blockedMessage) {
+            return res.status(403).json({ message: blockedMessage });
+        }
+
+        if (!eventId) {
+            return res.status(400).json({ message: 'Invalid event id' });
+        }
+
+        const memberEmail = normalizeEmail(email);
+        if (!memberEmail) {
+            return res.status(400).json({ message: 'Member email is required' });
+        }
+
+        const event = await Event.findByPk(eventId);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const leaderRegistration = await Registration.findOne({
+            where: { userId: req.user.id, eventId },
+            include: [{ model: User, as: 'user', attributes: ['name', 'email', 'college'] }, { model: Event, as: 'event', attributes: ['id', 'name', 'maxTeamSize', 'minTeamSize'] }]
+        });
+
+        if (!leaderRegistration || leaderRegistration.type !== 'team') {
+            return res.status(400).json({ message: 'Team registration not found for this event' });
+        }
+
+        const memberUser = await User.findOne({
+            where: { email: memberEmail },
+            attributes: ['id', 'name', 'email', 'college', 'role', 'status']
+        });
+
+        if (!memberUser) {
+            return res.status(404).json({ message: 'Selected member is not registered in the portal' });
+        }
+
+        if (memberUser.role !== 'participant') {
+            return res.status(400).json({ message: 'Only participant accounts can be added to a team' });
+        }
+
+        if (normalizeEmail(memberUser.college) !== normalizeEmail(req.user.college)) {
+            return res.status(400).json({ message: 'Team members must belong to your college' });
+        }
+
+        if (memberEmail === normalizeEmail(req.user.email)) {
+            return res.status(400).json({ message: 'You cannot add yourself to the team' });
+        }
+
+        const currentTeamDetails = leaderRegistration.teamDetails || {};
+        const currentMembers = Array.isArray(currentTeamDetails.members) ? currentTeamDetails.members : [];
+
+        const conflictingInvitation = await TeamInvitation.findOne({
+            where: {
+                eventId,
+                inviteeEmail: memberEmail,
+                status: 'pending'
+            }
+        });
+
+        if (conflictingInvitation && normalizeEmail(conflictingInvitation.inviterEmail) !== normalizeEmail(req.user.email)) {
+            return res.status(400).json({ message: 'User already has a pending invitation for this event' });
+        }
+
+        const existingInvitation = await TeamInvitation.findOne({
+            where: {
+                eventId,
+                inviteeEmail: memberEmail,
+                inviterEmail: normalizeEmail(req.user.email)
+            }
+        });
+
+        if (existingInvitation?.status === 'accepted') {
+            return res.status(400).json({ message: 'User already accepted this invitation' });
+        }
+
+        if (currentMembers.some((member) => normalizeEmail(member?.email) === memberEmail)) {
+            return res.status(400).json({ message: 'User already added to this team' });
+        }
+
+        const maxMembersToSelect = Math.max((event.maxTeamSize || 4) - 1, 1);
+        if (currentMembers.length >= maxMembersToSelect) {
+            return res.status(400).json({ message: `Team is already full (${maxMembersToSelect} members besides leader)` });
+        }
+
+        const takenEmails = await collectTakenEmailsForEvent(eventId);
+        if (takenEmails.has(memberEmail)) {
+            return res.status(400).json({ message: `${memberEmail} is already participating in this event` });
+        }
+
+        const updatedTeamName = currentTeamDetails.name || `${req.user.name || 'Team Lead'} Team`;
+        const updatedTeamDetails = {
+            ...currentTeamDetails,
+            name: updatedTeamName,
+            leader: req.user.email,
+            leaderName: req.user.name,
+            leaderCollege: req.user.college,
+            members: [
+                ...currentMembers,
+                {
+                    email: memberUser.email,
+                    name: memberUser.name,
+                    status: 'pending'
+                }
+            ]
+        };
+
+        leaderRegistration.teamDetails = updatedTeamDetails;
+        await leaderRegistration.save();
+
+        if (existingInvitation) {
+            await existingInvitation.update({
+                leaderRegistrationId: leaderRegistration.id,
+                inviterId: req.user.id,
+                inviterName: req.user.name,
+                inviterEmail: req.user.email,
+                inviteeId: memberUser.id,
+                inviteeName: memberUser.name,
+                inviteeEmail: memberUser.email,
+                teamName: updatedTeamName,
+                eventName: event.name,
+                status: 'pending',
+                respondedAt: null
+            });
+        } else {
+            await TeamInvitation.create({
+                eventId,
+                leaderRegistrationId: leaderRegistration.id,
+                inviterId: req.user.id,
+                inviterName: req.user.name,
+                inviterEmail: req.user.email,
+                inviteeId: memberUser.id,
+                inviteeName: memberUser.name,
+                inviteeEmail: memberUser.email,
+                teamName: updatedTeamName,
+                eventName: event.name
+            });
+        }
+
+        const appBase = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        await sendEmail({
+            email: memberUser.email,
+            subject: `Team Invitation - ${event.name}`,
+            html: buildTeamInviteMail({
+                appBase,
+                inviterName: req.user.name,
+                teamName: updatedTeamName,
+                eventName: event.name
+            })
+        });
+
+        return res.json({
+            message: 'Invitation sent successfully',
+            teamDetails: updatedTeamDetails
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+exports.getMyTeamInvitations = async (req, res) => {
+    try {
+        const invitations = await TeamInvitation.findAll({
+            where: {
+                inviteeEmail: normalizeEmail(req.user.email),
+                status: 'pending'
+            },
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.json(invitations);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.respondToTeamInvitation = async (req, res) => {
+    try {
+        const invitationId = Number(req.params.id);
+        const { decision } = req.body;
+
+        if (!invitationId) {
+            return res.status(400).json({ message: 'Invalid invitation id' });
+        }
+
+        if (!['accept', 'reject'].includes(decision)) {
+            return res.status(400).json({ message: 'Invalid invitation decision' });
+        }
+
+        const invitation = await TeamInvitation.findByPk(invitationId);
+        if (!invitation) {
+            return res.status(404).json({ message: 'Invitation not found' });
+        }
+
+        if (normalizeEmail(invitation.inviteeEmail) !== normalizeEmail(req.user.email)) {
+            return res.status(403).json({ message: 'This invitation does not belong to you' });
+        }
+
+        if (invitation.status !== 'pending') {
+            return res.status(400).json({ message: 'Invitation already processed' });
+        }
+
+        const leaderRegistration = await Registration.findByPk(invitation.leaderRegistrationId, {
+            include: [{ model: User, as: 'user', attributes: ['name', 'email', 'college'] }, { model: Event, as: 'event' }]
+        });
+
+        if (!leaderRegistration || leaderRegistration.type !== 'team') {
+            return res.status(404).json({ message: 'Team registration not found' });
+        }
+
+        const currentTeamDetails = leaderRegistration.teamDetails || {};
+        const currentMembers = Array.isArray(currentTeamDetails.members) ? currentTeamDetails.members : [];
+        const teamMemberIndex = currentMembers.findIndex((member) => normalizeEmail(member?.email) === normalizeEmail(req.user.email));
+        const inviteTeamName = invitation.teamName || currentTeamDetails.name || `${leaderRegistration.user?.name || 'Team Lead'} Team`;
+        const inviteEventName = invitation.eventName || leaderRegistration.event?.name || 'the event';
+        const appBase = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+
+        if (decision === 'reject') {
+            invitation.status = 'rejected';
+            invitation.respondedAt = new Date();
+            await invitation.save();
+
+            if (teamMemberIndex !== -1) {
+                currentMembers.splice(teamMemberIndex, 1);
+                leaderRegistration.teamDetails = {
+                    ...currentTeamDetails,
+                    members: currentMembers
+                };
+                await leaderRegistration.save();
+            }
+
+            await sendEmail({
+                email: invitation.inviteeEmail,
+                subject: `Team Invitation Declined - ${inviteEventName}`,
+                html: buildInvitationRejectedMail({ appBase, teamName: inviteTeamName, eventName: inviteEventName })
+            });
+
+            return res.json({ message: 'Invitation rejected' });
+        }
+
+        const acceptedMember = {
+            email: req.user.email,
+            name: req.user.name,
+            status: 'accepted'
+        };
+
+        if (teamMemberIndex === -1) {
+            currentMembers.push(acceptedMember);
+        } else {
+            currentMembers[teamMemberIndex] = acceptedMember;
+        }
+
+        leaderRegistration.teamDetails = {
+            ...currentTeamDetails,
+            leader: invitation.inviterEmail || leaderRegistration.teamDetails?.leader || leaderRegistration.user?.email,
+            leaderName: invitation.inviterName || leaderRegistration.teamDetails?.leaderName || leaderRegistration.user?.name,
+            leaderCollege: leaderRegistration.user?.college || leaderRegistration.teamDetails?.leaderCollege,
+            name: inviteTeamName,
+            members: currentMembers
+        };
+        await leaderRegistration.save();
+
+        const existingRegistration = await Registration.findOne({
+            where: { userId: req.user.id, eventId: invitation.eventId }
+        });
+
+        if (existingRegistration) {
+            return res.status(400).json({ message: 'You are already registered for this event' });
+        } else {
+            const registrationPayload = await buildTeamRegistrationPayload({
+                user: req.user,
+                event: leaderRegistration.event,
+                teamDetails: leaderRegistration.teamDetails
+            });
+
+            await Registration.create(registrationPayload);
+        }
+
+        invitation.status = 'accepted';
+        invitation.respondedAt = new Date();
+        await invitation.save();
+
+        await sendEmail({
+            email: invitation.inviteeEmail,
+            subject: `Invitation Accepted - ${inviteEventName}`,
+            html: buildInvitationAcceptedMail({ appBase, teamName: inviteTeamName, eventName: inviteEventName })
+        });
+
+        return res.json({ message: 'Invitation accepted' });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+exports.removeTeamMember = async (req, res) => {
+    try {
+        const eventId = Number(req.params.eventId);
+        const { email } = req.body;
+
+        const blockedMessage = assertActiveAccount(req.user);
+        if (blockedMessage) {
+            return res.status(403).json({ message: blockedMessage });
+        }
+
+        if (!eventId) {
+            return res.status(400).json({ message: 'Invalid event id' });
+        }
+
+        const memberEmail = normalizeEmail(email);
+        if (!memberEmail) {
+            return res.status(400).json({ message: 'Member email is required' });
+        }
+
+        const leaderRegistration = await Registration.findOne({
+            where: { userId: req.user.id, eventId },
+            include: [{ model: User, as: 'user', attributes: ['name', 'email', 'college'] }, { model: Event, as: 'event', attributes: ['id', 'name', 'maxTeamSize', 'minTeamSize'] }]
+        });
+
+        if (!leaderRegistration || leaderRegistration.type !== 'team') {
+            return res.status(400).json({ message: 'Team registration not found for this event' });
+        }
+
+        const currentTeamDetails = leaderRegistration.teamDetails || {};
+        const currentMembers = Array.isArray(currentTeamDetails.members) ? currentTeamDetails.members : [];
+        const nextMembers = currentMembers.filter((member) => normalizeEmail(member?.email) !== memberEmail);
+
+        if (nextMembers.length === currentMembers.length) {
+            return res.status(404).json({ message: 'Member not found in team' });
+        }
+
+        const updatedTeamDetails = {
+            ...currentTeamDetails,
+            leader: req.user.email,
+            leaderName: req.user.name,
+            leaderCollege: req.user.college,
+            members: nextMembers
+        };
+
+        leaderRegistration.teamDetails = updatedTeamDetails;
+        await leaderRegistration.save();
+
+        const invitation = await TeamInvitation.findOne({
+            where: {
+                eventId,
+                inviteeEmail: memberEmail,
+                inviterEmail: normalizeEmail(req.user.email)
+            }
+        });
+
+        if (invitation) {
+            if (invitation.status === 'accepted') {
+                const memberUser = await User.findOne({ where: { email: memberEmail } });
+                if (memberUser) {
+                    const inviteeRegistration = await Registration.findOne({
+                        where: { userId: memberUser.id, eventId }
+                    });
+
+                    if (inviteeRegistration) {
+                        await inviteeRegistration.destroy();
+                    }
+                }
+            }
+
+            await invitation.destroy();
+        }
+
+        return res.json({
+            message: 'Member removed successfully',
+            teamDetails: updatedTeamDetails
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 };
 
@@ -185,7 +662,68 @@ exports.getMyRegistrations = async (req, res) => {
             where: { userId: req.user.id },
             include: [{ model: Event, as: 'event', required: true }, { model: User, as: 'user' }]
         });
-        res.json(registrations);
+
+        const ownedTeamEvents = registrations
+            .filter((registration) => registration.type === 'team')
+            .map((registration) => registration.eventId);
+
+        const teamInvitations = ownedTeamEvents.length > 0
+            ? await TeamInvitation.findAll({
+                where: {
+                    eventId: ownedTeamEvents,
+                    inviterEmail: normalizeEmail(req.user.email)
+                }
+            })
+            : [];
+
+        const inviteStatusByEventAndEmail = new Map(
+            teamInvitations.map((invitation) => [
+                `${invitation.eventId}:${normalizeEmail(invitation.inviteeEmail)}`,
+                invitation.status
+            ])
+        );
+
+        const leaderEmails = registrations
+            .map((registration) => normalizeEmail(registration.teamDetails?.leader))
+            .filter(Boolean);
+
+        const leaderUsers = leaderEmails.length > 0
+            ? await User.findAll({
+                where: { email: leaderEmails },
+                attributes: ['name', 'email', 'college']
+            })
+            : [];
+
+        const leaderByEmail = new Map(leaderUsers.map((leader) => [normalizeEmail(leader.email), leader]));
+
+        res.json(registrations.map((registration) => {
+            const teamDetails = registration.teamDetails ? { ...registration.teamDetails } : registration.teamDetails;
+            const leader = teamDetails?.leader ? leaderByEmail.get(normalizeEmail(teamDetails.leader)) : null;
+
+            if (teamDetails && leader) {
+                teamDetails.leaderName = teamDetails.leaderName || leader.name;
+                teamDetails.leaderCollege = teamDetails.leaderCollege || leader.college;
+            }
+
+            if (teamDetails && Array.isArray(teamDetails.members)) {
+                teamDetails.members = teamDetails.members.map((member) => {
+                    const inviteStatus = inviteStatusByEventAndEmail.get(`${registration.eventId}:${normalizeEmail(member?.email)}`);
+                    if (!inviteStatus) {
+                        return member;
+                    }
+
+                    return {
+                        ...member,
+                        status: inviteStatus === 'accepted' ? 'accepted' : inviteStatus === 'rejected' ? 'rejected' : 'pending'
+                    };
+                });
+            }
+
+            return {
+                ...registration.toJSON(),
+                teamDetails
+            };
+        }));
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

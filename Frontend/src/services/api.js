@@ -54,6 +54,10 @@ export const documentsAPI = {
 
 export const registrationAPI = {
     register: (data) => API.post('/registrations', data),
+    addTeamMember: (eventId, data) => API.post(`/registrations/team/${eventId}/member`, data),
+    removeTeamMember: (eventId, data) => API.patch(`/registrations/team/${eventId}/member`, data),
+    getInvitations: () => API.get('/registrations/invitations'),
+    respondToInvitation: (id, decision) => API.patch(`/registrations/invitations/${id}`, { decision }),
     getMy: () => API.get('/registrations/my'),
     getAll: () => API.get('/registrations/all'),
     getAssigned: () => API.get('/registrations/assigned'),
@@ -73,6 +77,9 @@ export const userAPI = {
     updateStatus: (id, status) => API.patch(`/users/${id}/status`, { status }),
     getById: (id) => API.get(`/users/${id}`),
     getCollegeDetails: (slug) => API.get(`/users/college/${slug}`),
+    submitPaymentProof: (formData) => API.post('/users/payment-proof', formData),
+    getPaymentParticipants: () => API.get('/users/payments'),
+    reviewPayment: (id, decision) => API.patch(`/users/${id}/payment-decision`, { decision }),
 };
 
 export const logsAPI = {

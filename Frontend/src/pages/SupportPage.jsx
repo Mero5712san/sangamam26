@@ -6,10 +6,10 @@ export function SupportPage() {
     const navigate = useNavigate();
 
     const admins = [
-        { name: 'Dr. Rajesh Kumar', role: 'Chief Administrator', email: 'rajesh.admin@sangamam.edu', phone: '+91 98765 43210' },
-        { name: 'Prof. Meera Iyer', role: 'Event Coordinator', email: 'meera.iyer@sangamam.edu', phone: '+91 91234 56780' },
-        { name: 'Mr. Arvind Swamy', role: 'Technical Head', email: 'arvind.tech@sangamam.edu', phone: '+91 82345 67890' },
-        { name: 'Ms. Shalini Devi', role: 'Support Specialist', email: 'shalini.support@sangamam.edu', phone: '+91 73456 78901' },
+        { name: 'Prabhavathi', role: 'Event Coordinator', email: 'rajesh.admin@sangamam.edu', phone: '+91 98765 43210' },
+        { name: 'Lathika ', role: 'Event Coordinator', email: 'meera.iyer@sangamam.edu', phone: '+91 91234 56780' },
+        { name: 'Surya Raj', role: 'Event Coordinator', email: 'arvind.tech@sangamam.edu', phone: '+91 82345 67890' },
+        { name: 'Jai Krishna', role: 'Event Coordinator', email: 'shalini.support@sangamam.edu', phone: '+91 73456 78901' },
     ];
 
     return (

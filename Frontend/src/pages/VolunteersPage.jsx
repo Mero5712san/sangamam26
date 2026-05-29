@@ -80,7 +80,7 @@ export function VolunteersPage() {
     }
 
     const toggleFreeze = (id) => {
-        setVolunteers(volunteers.map(v => 
+        setVolunteers(volunteers.map(v =>
             v.id === id ? { ...v, status: v.status === 'active' ? 'freezed' : 'active' } : v
         ));
         showToast('Volunteer status updated', 'success');
@@ -101,9 +101,9 @@ export function VolunteersPage() {
     };
 
     const removeEvent = (volunteerId, eventName) => {
-        setVolunteers(volunteers.map(v => 
-            v.id === volunteerId 
-                ? { ...v, assignedEvents: v.assignedEvents.filter(e => e !== eventName) } 
+        setVolunteers(volunteers.map(v =>
+            v.id === volunteerId
+                ? { ...v, assignedEvents: v.assignedEvents.filter(e => e !== eventName) }
                 : v
         ));
         showToast('Event assignment removed', 'info');
@@ -145,8 +145,8 @@ export function VolunteersPage() {
     };
 
     const filteredVolunteers = volunteers.filter(v => {
-        const matchesSearch = v.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             v.college.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            v.college.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter = filterStatus === 'all' || v.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
@@ -158,7 +158,7 @@ export function VolunteersPage() {
                     <h1 className="text-4xl font-black text-white tracking-tight">Volunteer Squad</h1>
                     <p className="text-gray-500 mt-1 font-medium italic">Empowering the backbone of Sangamam 2024</p>
                 </div>
-                <button 
+                <button
                     className="sangamam-button px-6 py-3 flex items-center gap-2 font-bold shadow-lg"
                     onClick={() => setShowAddModal(true)}
                 >
@@ -201,8 +201,8 @@ export function VolunteersPage() {
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="Search by name or college..."
                         className="sangamam-input w-full pl-12 pr-4 py-3 bg-white"
                         value={searchTerm}
@@ -211,7 +211,7 @@ export function VolunteersPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100">
                     <Filter size={18} className="text-gray-400" />
-                    <select 
+                    <select
                         className="bg-transparent text-sm font-bold text-gray-600 focus:outline-none"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
@@ -232,7 +232,7 @@ export function VolunteersPage() {
                                 {volunteer.name.charAt(0)}
                             </div>
                             <div className="flex gap-2">
-                                <button 
+                                <button
                                     onClick={() => toggleFreeze(volunteer.id)}
                                     className={`p-2 rounded-xl transition-colors ${volunteer.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
                                     title={volunteer.status === 'active' ? 'Freeze Account' : 'Unfreeze Account'}
@@ -277,7 +277,7 @@ export function VolunteersPage() {
                                         <span className="text-[10px] text-gray-400 italic">No events assigned</span>
                                     )}
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => navigate(`/volunteers/assign-job/${volunteer.id}`)}
                                     className="w-full py-2.5 bg-sangamam-gold/10 text-sangamam-gold border border-sangamam-gold/20 rounded-xl text-xs font-bold hover:bg-sangamam-gold hover:text-[#2a130d] transition-all flex items-center justify-center gap-2"
                                 >
@@ -302,7 +302,7 @@ export function VolunteersPage() {
                                 <X size={24} />
                             </button>
                         </div>
-                        
+
                         <div className="p-8 space-y-6">
                             <div>
                                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Current Assignments</h3>
@@ -311,7 +311,7 @@ export function VolunteersPage() {
                                         assigningTo.assignedEvents.map(event => (
                                             <div key={event} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-100 rounded-xl group">
                                                 <span className="text-xs font-bold text-gray-700">{event}</span>
-                                                <button 
+                                                <button
                                                     onClick={() => removeEvent(assigningTo.id, event)}
                                                     className="text-gray-400 hover:text-red-500 transition-colors"
                                                 >
@@ -332,11 +332,10 @@ export function VolunteersPage() {
                                         <button
                                             key={event}
                                             onClick={() => assignEvent(assigningTo.id, event)}
-                                            className={`flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
-                                                assigningTo.assignedEvents.includes(event)
-                                                ? 'bg-emerald-50 border-emerald-100 text-emerald-700 opacity-50 cursor-default'
-                                                : 'bg-white border-gray-100 text-gray-700 hover:border-sangamam-gold hover:bg-sangamam-gold/5'
-                                            }`}
+                                            className={`flex items-center justify-between p-3 rounded-xl border transition-all text-left ${assigningTo.assignedEvents.includes(event)
+                                                    ? 'bg-emerald-50 border-emerald-100 text-emerald-700 opacity-50 cursor-default'
+                                                    : 'bg-white border-gray-100 text-gray-700 hover:border-sangamam-gold hover:bg-sangamam-gold/5'
+                                                }`}
                                         >
                                             <span className="text-xs font-bold">{event}</span>
                                             {!assigningTo.assignedEvents.includes(event) && <Plus size={14} className="text-sangamam-gold" />}
@@ -348,7 +347,7 @@ export function VolunteersPage() {
                         </div>
 
                         <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end">
-                            <button 
+                            <button
                                 onClick={() => navigate('/volunteers')}
                                 className="px-8 py-3 bg-[#2a130d] text-white font-bold rounded-xl hover:opacity-90 transition-opacity"
                             >
@@ -372,65 +371,65 @@ export function VolunteersPage() {
                                 <X size={24} />
                             </button>
                         </div>
-                        
+
                         <form onSubmit={handleAddVolunteer} className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Full Name</label>
-                                    <input 
+                                    <input
                                         type="text" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="John Doe"
                                         value={newVolunteer.name}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, name: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</label>
-                                    <input 
+                                    <input
                                         type="email" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="john@college.edu"
                                         value={newVolunteer.email}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, email: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Phone Number</label>
-                                    <input 
+                                    <input
                                         type="tel" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="+91 XXXXX XXXXX"
                                         value={newVolunteer.phone}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, phone: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, phone: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Roll Number</label>
-                                    <input 
+                                    <input
                                         type="text" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="21BCS001"
                                         value={newVolunteer.rollNo}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, rollNo: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, rollNo: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Department</label>
-                                    <input 
+                                    <input
                                         type="text" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="Computer Science"
                                         value={newVolunteer.department}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, department: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, department: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Academic Year</label>
-                                    <select 
+                                    <select
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50 appearance-none"
                                         value={newVolunteer.year}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, year: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, year: e.target.value })}
                                     >
                                         <option value="1">1st Year</option>
                                         <option value="2">2nd Year</option>
@@ -443,10 +442,10 @@ export function VolunteersPage() {
                                     <div className="flex gap-4 h-[52px] items-center">
                                         {['Male', 'Female'].map(g => (
                                             <label key={g} className="flex items-center gap-2 cursor-pointer text-sm font-bold text-gray-600">
-                                                <input 
+                                                <input
                                                     type="radio" name="modal-gender" value={g}
                                                     checked={newVolunteer.gender === g}
-                                                    onChange={(e) => setNewVolunteer({...newVolunteer, gender: e.target.value})}
+                                                    onChange={(e) => setNewVolunteer({ ...newVolunteer, gender: e.target.value })}
                                                     className="accent-sangamam-maroon"
                                                 />
                                                 {g}
@@ -456,25 +455,25 @@ export function VolunteersPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account Password</label>
-                                    <input 
+                                    <input
                                         type="password" required
                                         className="sangamam-input w-full px-5 py-4 text-sm bg-gray-50"
                                         placeholder="••••••••"
                                         value={newVolunteer.password}
-                                        onChange={(e) => setNewVolunteer({...newVolunteer, password: e.target.value})}
+                                        onChange={(e) => setNewVolunteer({ ...newVolunteer, password: e.target.value })}
                                     />
                                 </div>
                             </div>
 
                             <div className="mt-8 flex justify-end gap-4 pt-6 border-t border-gray-100">
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => setShowAddModal(false)}
                                     className="px-8 py-4 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     Discard
                                 </button>
-                                <button 
+                                <button
                                     type="submit"
                                     className="px-8 py-4 bg-[#2a130d] text-white font-black rounded-2xl hover:opacity-90 transition-opacity shadow-xl"
                                 >

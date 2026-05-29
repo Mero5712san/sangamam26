@@ -60,13 +60,13 @@ export function VirtualIDCard({ participant, onClose }) {
                 />
 
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.03),rgba(0,0,0,0.05))]" />
-                
+
                 {/* Dynamic QR Positioning based on card type */}
-                <div 
+                <div
                     className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 aspect-square rounded-sm bg-white p-1 shadow-[0_16px_30px_rgba(0,0,0,0.35)]"
-                    style={{ 
-                        top: isStaff ? '65.5%' : '58%', 
-                        width: isStaff ? '33%' : '45%' 
+                    style={{
+                        top: isStaff ? '65.5%' : '58%',
+                        width: isStaff ? '33%' : '45%'
                     }}
                 >
                     {qrDataUrl ? (

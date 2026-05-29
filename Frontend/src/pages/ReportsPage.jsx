@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { FileText, MapPin, Trophy, Send, CheckCircle2, Navigation, AlertCircle, CheckCircle, ChevronRight, ClipboardList, Sparkles } from 'lucide-react';
+import { FileText, MapPin, Trophy, Send, CheckCircle2, AlertCircle, ChevronRight, ClipboardList, X, ZoomIn } from 'lucide-react';
 import { useToastStore } from '../store/toastStore';
 import { canManageEvent } from '../utils/eventAccess';
 import { eventAPI } from '../services/api';
@@ -11,8 +11,11 @@ export function ReportsPage() {
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeEventId, setActiveEventId] = useState(null);
+    const [showGeoModal, setShowGeoModal] = useState(false);
 
     const activeEvent = events.find(e => (e._id || e.id) === activeEventId);
+    const canViewReports = user?.role === 'admin' || user?.role === 'incharge';
+    const canEditReports = user?.role === 'incharge';
 
     const [geoFile, setGeoFile] = useState(null);
     const [geoPreview, setGeoPreview] = useState('');
@@ -81,6 +84,10 @@ export function ReportsPage() {
     };
 
     const submitGeo = async () => {
+        if (!canEditReports) {
+            showToast('Admins can view reports only.', 'warning');
+            return;
+        }
         if (!geoFile) {
             showToast('Please select an image for geotag', 'error');
             return;
@@ -102,6 +109,10 @@ export function ReportsPage() {
     };
 
     const submitPrizes = async () => {
+        if (!canEditReports) {
+            showToast('Admins can view reports only.', 'warning');
+            return;
+        }
         if (!prizeForm.internal.first || !prizeForm.external.first) {
             showToast('Please provide at least 1st prize winners for both categories', 'error');
             return;
@@ -124,7 +135,11 @@ export function ReportsPage() {
                 <div>
                     <p className="text-xs font-bold uppercase tracking-[0.28em] text-sangamam-gold/80">Reports Workspace</p>
                     <h1 className="mt-2 text-4xl font-black text-white tracking-tight">Event Reports</h1>
-                    {/* <p className="mt-2 max-w-2xl text-sm text-gray-400">Update venue geo-images and declare combined prize results from one focused workspace.</p> */}
+                    <p className="mt-2 max-w-2xl text-sm text-gray-400">
+                        {canEditReports
+                            ? 'Incharges can update the event report. Admins can review the same data in view-only mode.'
+                            : 'Only admin and incharge accounts can access this workspace.'}
+                    </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-sangamam-gold">
@@ -135,12 +150,17 @@ export function ReportsPage() {
                             <FileText size={16} /> Admin View
                         </div>
                     )}
+                    {user?.role === 'incharge' && (
+                        <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-emerald-300">
+                            <FileText size={16} /> Edit Mode
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start">
                 <aside className="rounded-[1.8rem] border border-white/8 bg-[#2a130d]/80 p-2 shadow-2xl shadow-black/10 backdrop-blur-sm">
-                    
+
                     <div className="mt-2 space-y-1.5">
                         {visibleEvents.map((ev) => {
                             const id = ev._id || ev.id;
@@ -181,23 +201,23 @@ export function ReportsPage() {
                                         <div className="grid grid-cols-1 gap-4">
                                             <div className="grid grid-cols-[170px_minmax(0,1fr)] items-center gap-4 rounded-[1.1rem] border border-white/8 bg-white/3 px-4 py-3">
                                                 <label className="text-sm font-bold text-sangamam-gold">Internal Winner 1</label>
-                                                <input type="text" placeholder="Enter name" className="sangamam-input w-full bg-white/5" value={prizeForm.internal.first} onChange={(e) => setPrizeForm({ ...prizeForm, internal: { ...prizeForm.internal, first: e.target.value } })} />
+                                                <input type="text" placeholder="Enter name" disabled={!canEditReports} className={`sangamam-input w-full bg-white/5 ${!canEditReports ? 'cursor-not-allowed opacity-70' : ''}`} value={prizeForm.internal.first} onChange={(e) => setPrizeForm({ ...prizeForm, internal: { ...prizeForm.internal, first: e.target.value } })} />
                                             </div>
                                             <div className="grid grid-cols-[170px_minmax(0,1fr)] items-center gap-4 rounded-[1.1rem] border border-white/8 bg-white/3 px-4 py-3">
                                                 <label className="text-sm font-bold text-sangamam-gold">Internal Winner 2</label>
-                                                <input type="text" placeholder="Enter name" className="sangamam-input w-full bg-white/5" value={prizeForm.internal.second} onChange={(e) => setPrizeForm({ ...prizeForm, internal: { ...prizeForm.internal, second: e.target.value } })} />
+                                                <input type="text" placeholder="Enter name" disabled={!canEditReports} className={`sangamam-input w-full bg-white/5 ${!canEditReports ? 'cursor-not-allowed opacity-70' : ''}`} value={prizeForm.internal.second} onChange={(e) => setPrizeForm({ ...prizeForm, internal: { ...prizeForm.internal, second: e.target.value } })} />
                                             </div>
                                             <div className="grid grid-cols-[170px_minmax(0,1fr)] items-center gap-4 rounded-[1.1rem] border border-white/8 bg-white/3 px-4 py-3">
                                                 <label className="text-sm font-bold text-sangamam-maroon">External Winner 1</label>
-                                                <input type="text" placeholder="Enter name" className="sangamam-input w-full bg-white/5" value={prizeForm.external.first} onChange={(e) => setPrizeForm({ ...prizeForm, external: { ...prizeForm.external, first: e.target.value } })} />
+                                                <input type="text" placeholder="Enter name" disabled={!canEditReports} className={`sangamam-input w-full bg-white/5 ${!canEditReports ? 'cursor-not-allowed opacity-70' : ''}`} value={prizeForm.external.first} onChange={(e) => setPrizeForm({ ...prizeForm, external: { ...prizeForm.external, first: e.target.value } })} />
                                             </div>
                                             <div className="grid grid-cols-[170px_minmax(0,1fr)] items-center gap-4 rounded-[1.1rem] border border-white/8 bg-white/3 px-4 py-3">
                                                 <label className="text-sm font-bold text-sangamam-maroon">External Winner 2</label>
-                                                <input type="text" placeholder="Enter name" className="sangamam-input w-full bg-white/5" value={prizeForm.external.second} onChange={(e) => setPrizeForm({ ...prizeForm, external: { ...prizeForm.external, second: e.target.value } })} />
+                                                <input type="text" placeholder="Enter name" disabled={!canEditReports} className={`sangamam-input w-full bg-white/5 ${!canEditReports ? 'cursor-not-allowed opacity-70' : ''}`} value={prizeForm.external.second} onChange={(e) => setPrizeForm({ ...prizeForm, external: { ...prizeForm.external, second: e.target.value } })} />
                                             </div>
                                         </div>
 
-                                        <button onClick={submitPrizes} disabled={!canManageEvent(user, activeEvent)} className={`w-full rounded-2xl px-6 py-4 font-black transition-all flex items-center justify-center gap-3 ${canManageEvent(user, activeEvent) ? 'bg-sangamam-gold text-white hover:opacity-90' : 'bg-white/8 text-gray-500 cursor-not-allowed'}`}>
+                                        <button onClick={submitPrizes} disabled={!canEditReports || !canManageEvent(user, activeEvent)} className={`w-full rounded-2xl px-6 py-4 font-black transition-all flex items-center justify-center gap-3 ${canEditReports && canManageEvent(user, activeEvent) ? 'bg-sangamam-gold text-white hover:opacity-90' : 'bg-white/8 text-gray-500 cursor-not-allowed'}`}>
                                             <Trophy size={18} /> Officialize Results
                                         </button>
                                     </div>
@@ -227,18 +247,25 @@ export function ReportsPage() {
                                         <div className="rounded-[1.4rem] border border-white/8 bg-white/3 p-4">
                                             <label className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-gray-400">Geotag Image</label>
                                             {geoPreview ? (
-                                                <div className="mb-4 overflow-hidden rounded-2xl border border-white/8 bg-black/10 p-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowGeoModal(true)}
+                                                    className="mb-4 w-full overflow-hidden rounded-2xl border border-white/8 bg-black/10 p-2 text-left transition hover:border-sangamam-gold/40 hover:shadow-lg"
+                                                >
                                                     <img src={geoPreview.startsWith('/') ? `http://localhost:5000${geoPreview}` : geoPreview} alt="Geo preview" className="max-h-56 w-full rounded-xl object-contain" />
-                                                </div>
+                                                    <div className="mt-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-sangamam-gold">
+                                                        <ZoomIn size={12} /> Click to enlarge
+                                                    </div>
+                                                </button>
                                             ) : (
                                                 <div className="mb-4 flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/3 text-center text-sm text-gray-500">
                                                     No geo-image uploaded yet
                                                 </div>
                                             )}
-                                            <input type="file" accept="image/*" onChange={(e) => { setGeoFile(e.target.files[0]); }} className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-sangamam-gold file:px-4 file:py-2 file:font-bold file:text-white" />
+                                            <input type="file" accept="image/*" disabled={!canEditReports} onChange={(e) => { setGeoFile(e.target.files[0]); }} className={`w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white file:mr-4 file:rounded-lg file:border-0 file:bg-sangamam-gold file:px-4 file:py-2 file:font-bold file:text-white ${!canEditReports ? 'cursor-not-allowed opacity-70' : ''}`} />
                                         </div>
 
-                                        <button onClick={submitGeo} disabled={!canManageEvent(user, activeEvent)} className={`mt-5 w-full rounded-2xl px-6 py-4 font-black transition-all flex items-center justify-center gap-3 ${canManageEvent(user, activeEvent) ? 'bg-sangamam-maroon text-white hover:opacity-90' : 'bg-white/8 text-gray-500 cursor-not-allowed'}`}>
+                                        <button onClick={submitGeo} disabled={!canEditReports || !canManageEvent(user, activeEvent)} className={`mt-5 w-full rounded-2xl px-6 py-4 font-black transition-all flex items-center justify-center gap-3 ${canEditReports && canManageEvent(user, activeEvent) ? 'bg-sangamam-maroon text-white hover:opacity-90' : 'bg-white/8 text-gray-500 cursor-not-allowed'}`}>
                                             <Send size={18} /> Update Geo Image
                                         </button>
                                     </div>
@@ -267,6 +294,30 @@ export function ReportsPage() {
                     )}
                 </main>
             </div>
+
+            {showGeoModal && geoPreview && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="relative w-full max-w-5xl rounded-[2rem] border border-white/10 bg-[#120705] p-4 shadow-2xl">
+                        <button
+                            onClick={() => setShowGeoModal(false)}
+                            className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                            aria-label="Close image preview"
+                        >
+                            <X size={20} />
+                        </button>
+                        <div className="flex items-center gap-2 pb-4 text-sm font-bold uppercase tracking-widest text-sangamam-gold">
+                            <ZoomIn size={16} /> Geo Tag Preview
+                        </div>
+                        <div className="flex max-h-[80vh] items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/10 bg-black">
+                            <img
+                                src={geoPreview.startsWith('/') ? `http://localhost:5000${geoPreview}` : geoPreview}
+                                alt="Geo tag enlarged preview"
+                                className="max-h-[80vh] w-full object-contain"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

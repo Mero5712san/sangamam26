@@ -90,9 +90,9 @@ export function ParticipantApprovalPage() {
                                             </div>
                                         </div>
                                         <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${reg.status === 'participating' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                                reg.status === 'absent' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                                    reg.status === 'completed' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                                        'bg-white/5 border-white/10 text-gray-400'
+                                            reg.status === 'absent' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                                reg.status === 'completed' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                                    'bg-white/5 border-white/10 text-gray-400'
                                             }`}>
                                             {reg.status}
                                         </div>
@@ -102,8 +102,8 @@ export function ParticipantApprovalPage() {
                                         <button
                                             onClick={() => handleMarkAttendance(reg.id, 'participating')}
                                             className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${reg.status === 'participating'
-                                                    ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
+                                                ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
                                                 }`}
                                         >
                                             <CheckCircle size={14} /> Present
@@ -111,8 +111,8 @@ export function ParticipantApprovalPage() {
                                         <button
                                             onClick={() => handleMarkAttendance(reg.id, 'absent')}
                                             className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${reg.status === 'absent'
-                                                    ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
-                                                    : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white'
+                                                ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+                                                : 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white'
                                                 }`}
                                         >
                                             <XCircle size={14} /> Absent
