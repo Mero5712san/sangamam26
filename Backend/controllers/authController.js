@@ -117,7 +117,7 @@ exports.registerUser = async (req, res) => {
                     Hello <strong>${user.name}</strong>, your registration for <strong>Muthamizh Sangamam 2026</strong> is successful.
                 </p>
                 <p style="font-size: 15px; line-height: 1.6; color: #f5e1b3; margin: 0 0 18px 0;">
-                    Registration successful, but payment is pending. Portal access is enabled without payment.
+                    Registration successful. Payment is pending, so please pay now to complete verification.
                 </p>
                 <a href="${PAYMENT_URL}" style="display:inline-block; padding:12px 22px; border-radius:10px; text-decoration:none; font-weight:700; background:#f1c40f; color:#2a130d;">Pay Now</a>
                 <p style="font-size: 12px; color: #d6c7a3; margin-top: 14px;">If the button does not work, use this link: ${PAYMENT_URL}</p>
@@ -125,7 +125,7 @@ exports.registerUser = async (req, res) => {
 
         await sendEmail({
             email: user.email,
-            subject: 'Registration Successful - Muthamizh Sangamam 2026',
+            subject: internalParticipant ? 'Registration Successful - Muthamizh Sangamam 2026' : 'Registration Successful - Pay Now - Muthamizh Sangamam 2026',
             html: buildMailShell({
                 appBase,
                 title: 'Registration Successful',

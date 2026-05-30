@@ -18,8 +18,8 @@ export function AppShell({ children }) {
                 <div className="border-b border-amber-500/30 bg-gradient-to-r from-amber-500/20 via-red-500/15 to-amber-500/20 px-4 py-3 lg:ml-72">
                     <div className="mx-auto grid max-w-7xl gap-4 rounded-2xl border border-amber-500/25 bg-[#2a130d]/70 px-4 py-3 backdrop-blur-md md:grid-cols-[1fr_auto] md:items-center">
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-extrabold text-amber-300">Payment pending</p>
-                            <p className="text-xs text-amber-100/80">Your registration is complete, but payment proof is still required to confirm access.</p>
+                            <p className="text-sm font-extrabold text-amber-300">Registration successful</p>
+                            <p className="text-xs text-amber-100/80">Your registration is complete, but payment is still pending. Open the payment page to continue verification.</p>
                         </div>
                         <button
                             onClick={() => navigate('/payment-confirmation')}

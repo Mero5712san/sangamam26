@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { CalendarDays, ListChecks, BarChart3, UserCheck, Users, FileClock, FileText, LogOut } from 'lucide-react';
+import { CalendarDays, ListChecks, BarChart3, UserCheck, Users, FileClock, FileText, LogOut, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const roleLinks = {
@@ -23,6 +23,7 @@ const roleLinks = {
         { label: 'Stats', href: '/analytics', icon: BarChart3 },
         { label: 'Approvals', href: '/approvals', icon: UserCheck },
         { label: 'Volunteers', href: '/volunteers', icon: Users },
+        { label: 'Payments', href: '/payments', icon: CreditCard },
         { label: 'Reports', href: '/reports', icon: FileText },
         { label: 'Audit Logs', href: '/logs', icon: FileClock },
     ],

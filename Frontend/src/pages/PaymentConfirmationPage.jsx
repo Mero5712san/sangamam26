@@ -43,42 +43,48 @@ export function PaymentConfirmationPage() {
     };
 
     return (
-        <div className="mx-auto max-w-4xl space-y-6">
+        <div className="mx-auto max-w-5xl space-y-6">
             <div className="rounded-[28px] border border-sangamam-border bg-[linear-gradient(180deg,rgba(52,24,18,0.98),rgba(22,9,6,0.98))] p-6 shadow-2xl md:p-8">
-                <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sangamam-gold">Payment confirmation</p>
-                        {/* <h1 className="mt-2 text-3xl font-bold text-white">Upload payment proof</h1> */}
-                        {/* <p className="mt-2 text-sm text-gray-400">Use the official payment portal, then upload the screenshot here.</p> */}
+                        <h1 className="mt-2 text-3xl font-bold text-white">Pay now and submit proof</h1>
+                        <p className="mt-2 max-w-2xl text-sm text-gray-300">Open the official payment portal, complete the transaction, then upload the screenshot here for admin verification.</p>
+                    </div>
+                    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-amber-200">
+                        Official portal linked below
                     </div>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
                     <a
                         href={PAYMENT_URL}
                         target="_blank"
                         rel="noreferrer"
-                        className="group rounded-3xl border border-sangamam-border bg-white/5 p-6 transition-all hover:border-sangamam-gold/40 hover:bg-white/10"
+                        className="group rounded-[2rem] border border-sangamam-border bg-white/5 p-5 transition-all hover:-translate-y-0.5 hover:border-sangamam-gold/40 hover:bg-white/10"
                     >
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <p className="text-sm font-bold text-sangamam-gold">Payment portal</p>
-                                <p className="mt-2 text-sm text-gray-300">Open the official payment link in a new tab.</p>
+                                <p className="text-sm font-bold text-sangamam-gold">Official payment card</p>
+                                <p className="mt-2 text-sm text-gray-300">Click this card to open the payment portal in a new tab.</p>
                             </div>
-                            <ExternalLink className="text-sangamam-gold transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" size={20} />
+                            <ExternalLink className="text-sangamam-gold transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" size={20} />
                         </div>
-                        <div className="mt-5 rounded-2xl border border-white/10 bg-[#1f0e09] p-4">
-                            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Link</p>
-                            <p className="mt-2 break-all font-mono text-sm text-white">{PAYMENT_URL}</p>
+                        <div className="mt-5 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[#1f0e09] p-4">
+                            <div className="rounded-[1.25rem] border border-amber-300/20 bg-gradient-to-br from-amber-300/10 via-white/5 to-transparent p-5">
+                                <p className="text-[10px] font-black uppercase tracking-[0.34em] text-amber-200/80">Payment link</p>
+                                <p className="mt-3 break-all text-sm font-medium text-white">{PAYMENT_URL}</p>
+                            </div>
+                            <p className="mt-3 text-xs text-gray-400">This opens the official Sangamam payment gateway.</p>
                         </div>
                     </a>
 
-                    <form onSubmit={handleSubmit} className="rounded-3xl border border-sangamam-border bg-white/5 p-6">
+                    <form onSubmit={handleSubmit} className="rounded-[2rem] border border-sangamam-border bg-white/5 p-5">
                         <div className="flex items-center gap-3 text-sangamam-gold">
                             <Upload size={20} />
-                            <h2 className="text-lg font-bold text-white">Upload proof</h2>
+                            <h2 className="text-lg font-bold text-white">Upload proof image</h2>
                         </div>
-                        <div className="mt-5 rounded-3xl border-2 border-dashed border-white/10 bg-black/20 p-5">
+                        <div className="mt-5 rounded-[1.75rem] border-2 border-dashed border-white/10 bg-black/20 p-5">
                             <label className="flex cursor-pointer flex-col items-center justify-center gap-3 text-center">
                                 <div className="rounded-full bg-sangamam-gold/15 p-4 text-sangamam-gold">
                                     <ImageIcon size={28} />

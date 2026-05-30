@@ -20,12 +20,12 @@ const buildPaymentDecisionContent = ({ name, approved }) => {
     const body = approved
         ? `
             <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello <strong>${name}</strong>,</p>
-            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0;">Your payment proof has been verified successfully. You are now fully confirmed for Muthamizh Sangamam 2026.</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0;">Your payment proof for the event has been verified successfully. Your access is now confirmed for Muthamizh Sangamam 2026.</p>
         `
         : `
             <p style="font-size: 16px; color: #ffffff; margin: 0 0 12px 0;">Hello <strong>${name}</strong>,</p>
-            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0 0 14px 0;">Your payment proof was rejected. Your account access has been disqualified.</p>
-            <p style="font-size: 13px; color:#d6c7a3; margin:0;">If this was a mistake, complete payment at <a href="${PAYMENT_URL}" style="color:#f1c40f;">${PAYMENT_URL}</a> and contact support.</p>
+            <p style="font-size: 15px; color: #f5e1b3; line-height:1.6; margin:0 0 14px 0;">Your payment proof for the event was rejected. Your account has been blocked from portal access.</p>
+            <p style="font-size: 13px; color:#d6c7a3; margin:0;">If this was a mistake, contact support and resubmit payment at <a href="${PAYMENT_URL}" style="color:#f1c40f;">${PAYMENT_URL}</a>.</p>
         `;
 
     return { title, content: body };
@@ -210,7 +210,8 @@ exports.getPaymentParticipants = async (req, res) => {
     try {
         const users = await User.findAll({
             where: {
-                role: 'participant'
+                role: 'participant',
+                participantType: 'external'
             },
             attributes: [
                 'id',

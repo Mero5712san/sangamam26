@@ -191,9 +191,9 @@ export default function App() {
           <Route
             path="/payments"
             element={
-              isVolunteerLite ? <Navigate to="/volunteers" /> : <ProtectedRoute>
+              isVolunteerLite ? <Navigate to="/volunteers" /> : user?.role === 'admin' ? <ProtectedRoute>
                 {withShell(<PaymentsPage />)}
-              </ProtectedRoute>
+              </ProtectedRoute> : <Navigate to="/events" />
             }
           />
 
